@@ -1381,7 +1381,7 @@ async function finishLesson(){
   document.getElementById("r-ok").textContent=S.ok;
   document.getElementById("r-ng").textContent=S.ng;
   document.getElementById("r-pc").textContent=pct+"%";
-  document.getElementById("r-xp").textContent=`+${xp} `+t("xp_earned")+(bonusXP?` (+${bonusXP} Bonus!)`):"";
+  document.getElementById("r-xp").textContent=`+${xp} `+t("xp_earned")+(bonusXP?` (+${bonusXP} Bonus!)`:"");
   const rmsg=document.getElementById("r-repeat-msg");rmsg.style.display=S.ng>0&&!S.isDaily?"block":"none";
   document.getElementById("xp-disp").textContent=p.xp;
   if(pct>=70)confetti();
