@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#FF6B35">
+  <title>LernWelt – Spielend lernen!</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDK (ESM) -->
+  <script type="module">
+    import { initializeApp }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getFirestore, doc, getDoc, setDoc, updateDoc }
+      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyDcB9c4oozG--l9Yag08PC7KoFzFu7Axpo",
+      authDomain:        "lernwelt-814e3.firebaseapp.com",
+      projectId:         "lernwelt-814e3",
+      storageBucket:     "lernwelt-814e3.firebasestorage.app",
+      messagingSenderId: "137162920496",
+      appId:             "1:137162920496:web:bb7773ed3c10501b0693f5",
+      measurementId:     "G-395EF9YC1B"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+    window._db = db;
+    window._fs = { doc, getDoc, setDoc, updateDoc };
+    window._fbReady = true;
+    document.dispatchEvent(new Event('firebase-ready'));
+  </script>
+
+  <style>
+    :root{
+      --pri:#FF6B35; --sec:#4ECDC4; --acc:#FFE66D;
+      --pur:#A78BFA; --grn:#6BCB77; --pnk:#FF8FAB;
+      --bg:#FFF8F0;  --card:#fff;   --txt:#2D2D2D; --muted:#888;
+      --sh:0 8px 32px rgba(0,0,0,.10);
+      --sh-sm:0 2px 12px rgba(0,0,0,.07);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
+
+    /* ── screens ── */
+    .screen{display:none;min-height:100vh;flex-direction:column}
+    .screen.active{display:flex}
+
+    /* ── loading ── */
+    #loading{position:fixed;inset:0;background:rgba(255,248,240,.93);
+      display:none;flex-direction:column;align-items:center;justify-content:center;z-index:999}
+    #loading.on{display:flex}
+    .dot{width:15px;height:15px;border-radius:50%;display:inline-block;margin:0 5px;
+      animation:db .6s ease infinite alternate}
+    .dot:nth-child(2){animation-delay:.15s;background:var(--sec)}
+    .dot:nth-child(3){animation-delay:.30s;background:var(--pur)}
+    @keyframes db{to{transform:translateY(-18px)}}
+    #loading-txt{font-family:'Baloo 2',cursive;font-size:19px;font-weight:700;
+      margin-top:18px;color:var(--pri)}
+
+    /* ── toast ── */
+    #toast{position:fixed;bottom:86px;left:50%;transform:translateX(-50%) translateY(16px);
+      background:#2d2d2d;color:#fff;padding:11px 22px;border-radius:50px;
+      font-size:14px;font-weight:700;opacity:0;transition:all .3s;z-index:998;
+      white-space:nowrap;pointer-events:none}
+    #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    /* ══════════ SPLASH ══════════ */
+    #sc-splash{background:linear-gradient(135deg,#FF6B35,#FF8FAB 50%,#A78BFA);
+      align-items:center;justify-content:center;padding:32px 20px;gap:0}
+    .splash-logo{font-family:'Baloo 2',cursive;font-size:clamp(44px,11vw,74px);
+      font-weight:800;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.2);
+      text-align:center;margin-bottom:6px}
+    .splash-logo span{color:var(--acc)}
+    .splash-sub{color:rgba(255,255,255,.9);font-size:15px;font-weight:600;
+      text-align:center;margin-bottom:32px}
+    .prof-list{width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+    .prof-card{background:#fff;border-radius:18px;padding:14px 18px;
+      display:flex;align-items:center;gap:14px;cursor:pointer;
+      box-shadow:0 8px 30px rgba(0,0,0,.13);
+      transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s}
+    .prof-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.18)}
+    .prof-av{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;
+      justify-content:center;font-size:26px;flex-shrink:0}
+    .prof-info{flex:1}
+    .prof-name{font-family:'Baloo 2',cursive;font-size:19px;font-weight:800}
+    .prof-meta{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}
+    .prof-code{font-size:11px;font-weight:800;letter-spacing:1px;
+      background:var(--bg);padding:4px 10px;border-radius:50px;color:var(--muted);flex-shrink:0}
+    .divider{display:flex;align-items:center;gap:10px;width:100%;max-width:480px;margin:8px 0}
+    .divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.35)}
+    .divider span{color:rgba(255,255,255,.8);font-size:12px;font-weight:700;white-space:nowrap}
+    .sp-btn{width:100%;max-width:480px;padding:15px;border-radius:15px;border:none;
+      font-family:'Baloo 2',cursive;font-size:18px;font-weight:800;cursor:pointer;
+      transition:transform .15s,box-shadow .15s;margin-bottom:10px}
+    .sp-btn:hover{transform:translateY(-2px)}
+    .sp-btn.pri{background:#fff;color:var(--pri);box-shadow:0 6px 24px rgba(0,0,0,.15)}
+    .sp-btn.sec{background:rgba(255,255,255,.18);color:#fff;border:2px solid rgba(255,255,255,.45)}
+
+    /* ══════════ CREATE PROFILE ══════════ */
+    #sc-create{background:var(--bg);align-items:center;padding:0 20px 40px}
+    .form-hdr{width:100%;background:linear-gradient(135deg,#FF6B35,#FF8FAB);
+      padding:38px 24px 30px;text-align:center;color:#fff;margin-bottom:26px}
+    .form-hdr h2{font-family:'Baloo 2',cursive;font-size:26px;font-weight:800}
+    .form-hdr p{opacity:.85;font-size:13px;margin-top:5px;font-weight:600}
+    .form-wrap{width:100%;max-width:460px}
+    .lbl{font-size:12px;font-weight:800;color:var(--muted);
+      text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:block}
+    .av-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:20px}
+    .av-opt{aspect-ratio:1;border-radius:14px;background:#fff;display:flex;
+      align-items:center;justify-content:center;font-size:28px;cursor:pointer;
+      box-shadow:var(--sh-sm);border:3px solid transparent;transition:all .2s}
+    .av-opt.sel{border-color:var(--pri);background:rgba(255,107,53,.07);transform:scale(1.1)}
+    .txt-inp{width:100%;padding:13px 17px;border-radius:13px;border:2px solid #eee;
+      font-family:'Nunito',sans-serif;font-size:16px;font-weight:700;background:#fff;
+      outline:none;transition:border-color .2s;margin-bottom:20px}
+    .txt-inp:focus{border-color:var(--pri)}
+    .age-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:22px}
+    .age-opt{border-radius:15px;padding:13px 10px;cursor:pointer;border:3px solid transparent;
+      background:#fff;box-shadow:var(--sh-sm);text-align:center;transition:all .2s}
+    .age-opt.sel{border-color:var(--pri);transform:scale(1.03)}
+    .age-opt .emo{font-size:28px;margin-bottom:5px;display:block}
+    .age-opt .lbl2{font-family:'Baloo 2',cursive;font-size:15px;font-weight:800}
+    .age-opt .rng{font-size:11px;color:var(--muted);font-weight:600}
+    .f-btn{width:100%;padding:16px;border-radius:14px;border:none;
+      font-family:'Baloo 2',cursive;font-size:19px;font-weight:800;cursor:pointer;
+      transition:transform .15s;margin-bottom:11px}
+    .f-btn:hover{transform:translateY(-2px)}
+    .f-btn.pri{background:linear-gradient(135deg,var(--pri),var(--pnk));color:#fff;
+      box-shadow:0 6px 20px rgba(255,107,53,.35)}
+    .f-btn.ghost{background:var(--bg);color:var(--muted)}
+
+    /* ══════════ JOIN ══════════ */
+    #sc-join{background:var(--bg);align-items:center;padding:0 20px 40px}
+    .join-hdr{width:100%;background:linear-gradient(135deg,#4ECDC4,#A78BFA);
+      padding:38px 24px 30px;text-align:center;color:#fff;margin-bottom:26px}
+    .join-hdr h2{font-family:'Baloo 2',cursive;font-size:26px;font-weight:800}
+    .join-hdr p{opacity:.85;font-size:13px;margin-top:5px;font-weight:600}
+    .code-row{display:flex;gap:8px;margin-bottom:16px}
+    .code-seg{flex:1;padding:15px 8px;border-radius:13px;border:2px solid #eee;
+      font-family:'Baloo 2',cursive;font-size:20px;font-weight:800;
+      text-align:center;outline:none;background:#fff;transition:border-color .2s;
+      text-transform:uppercase}
+    .code-seg:focus{border-color:var(--sec)}
+    .code-dash{display:flex;align-items:center;font-size:22px;font-weight:800;color:var(--muted)}
+    .code-hint{text-align:center;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:22px}
+    .code-hint strong{color:var(--pri)}
+
+    /* ══════════ TOPBAR + NAV ══════════ */
+    .topbar{background:#fff;box-shadow:var(--sh-sm);padding:11px 18px;
+      display:flex;align-items:center;justify-content:space-between;
+      position:sticky;top:0;z-index:100}
+    .tb-left{display:flex;align-items:center;gap:11px}
+    .tb-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+      justify-content:center;font-size:20px;cursor:pointer}
+    .tb-name{font-family:'Baloo 2',cursive;font-size:18px;font-weight:800}
+    .tb-right{display:flex;align-items:center;gap:9px}
+    .xp-pill{display:flex;align-items:center;gap:5px;background:var(--acc);
+      padding:6px 13px;border-radius:50px;font-weight:800;font-size:13px;color:#333}
+    .age-tag{padding:6px 11px;border-radius:50px;font-size:11px;font-weight:800;color:#fff}
+    .bnav{position:fixed;bottom:0;left:0;right:0;background:#fff;
+      box-shadow:0 -4px 20px rgba(0,0,0,.08);display:flex;justify-content:space-around;
+      padding:9px 0 max(env(safe-area-inset-bottom),9px);z-index:100}
+    .nb{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
+      padding:6px 15px;border-radius:13px;font-size:11px;font-weight:700;color:var(--muted);
+      transition:background .2s,color .2s}
+    .nb.on{color:var(--pri);background:rgba(255,107,53,.08)}
+    .nb .ni{font-size:23px}
+
+    /* ══════════ HOME ══════════ */
+    #sc-home{background:var(--bg)}
+    .hc{padding:18px 18px 96px;max-width:880px;margin:0 auto;width:100%}
+    .greet{font-family:'Baloo 2',cursive;font-size:clamp(21px,5vw,29px);font-weight:800;margin-bottom:3px}
+    .greet-s{color:var(--muted);font-size:13px;font-weight:600;margin-bottom:22px}
+    .streak-b{background:linear-gradient(135deg,#FF6B35,#FF8FAB);border-radius:19px;
+      padding:15px 19px;color:#fff;display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:22px;box-shadow:0 6px 22px rgba(255,107,53,.3)}
+    .streak-l{display:flex;align-items:center;gap:11px}
+    .sec-t{font-family:'Baloo 2',cursive;font-size:19px;font-weight:800;
+      margin-bottom:13px;margin-top:26px;display:flex;align-items:center;gap:7px}
+    .sub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:13px}
+    .sub-card{border-radius:19px;padding:19px 13px 15px;cursor:pointer;text-align:center;
+      box-shadow:var(--sh-sm);transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s}
+    .sub-card:hover{transform:translateY(-5px);box-shadow:var(--sh)}
+    .sub-card .si{font-size:38px;margin-bottom:7px;display:block}
+    .sub-card .sn{font-family:'Baloo 2',cursive;font-size:15px;font-weight:800;color:#fff}
+    .sub-card .sp{margin-top:7px;height:5px;background:rgba(255,255,255,.3);border-radius:99px;overflow:hidden}
+    .sub-card .spb{height:100%;background:rgba(255,255,255,.85);border-radius:99px}
+
+    /* ══════════ LESSONS ══════════ */
+    #sc-lessons{background:var(--bg)}
+    .bbar{padding:13px 18px;display:flex;align-items:center;gap:11px;
+      background:#fff;box-shadow:var(--sh-sm)}
+    .bk{width:36px;height:36px;border-radius:50%;background:var(--bg);
+      display:flex;align-items:center;justify-content:center;cursor:pointer;
+      font-size:17px;transition:background .2s}
+    .bk:hover{background:#eee}
+    .bbar-t{font-family:'Baloo 2',cursive;font-size:20px;font-weight:800}
+    .lc{padding:18px 18px 80px;max-width:680px;margin:0 auto;width:100%}
+    .les-card{background:#fff;border-radius:15px;padding:15px 17px;margin-bottom:11px;
+      display:flex;align-items:center;gap:13px;cursor:pointer;box-shadow:var(--sh-sm);
+      transition:transform .2s,box-shadow .2s}
+    .les-card:hover{transform:translateX(5px);box-shadow:var(--sh)}
+    .les-num{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;
+      justify-content:center;font-family:'Baloo 2',cursive;font-size:16px;font-weight:800;
+      color:#fff;flex-shrink:0}
+    .les-info{flex:1}
+    .les-t{font-weight:800;font-size:15px}
+    .les-m{font-size:12px;color:var(--muted);margin-top:2px}
+    .les-xp{font-size:12px;font-weight:700;color:#333;background:var(--acc);padding:4px 10px;border-radius:50px}
+    .les-done{color:var(--grn);font-size:20px}
+
+    /* ══════════ QUIZ ══════════ */
+    #sc-quiz{background:var(--bg)}
+    .qt{background:#fff;padding:11px 17px;display:flex;align-items:center;
+      justify-content:space-between;box-shadow:var(--sh-sm)}
+    .qpb{flex:1;margin:0 13px;height:10px;background:#eee;border-radius:99px;overflow:hidden}
+    .qpf{height:100%;background:linear-gradient(90deg,var(--pri),var(--pnk));
+      border-radius:99px;transition:width .4s}
+    .qc{font-weight:700;font-size:13px;color:var(--muted)}
+    .quiz-con{flex:1;display:flex;flex-direction:column;padding:18px 18px 22px;
+      max-width:680px;margin:0 auto;width:100%}
+    .q-tag{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;
+      border-radius:50px;font-size:12px;font-weight:700;color:#fff;margin-bottom:14px;width:fit-content}
+    .q-txt{font-family:'Baloo 2',cursive;font-size:clamp(17px,4.5vw,25px);
+      font-weight:800;line-height:1.35;margin-bottom:22px}
+    .q-illus{font-size:68px;text-align:center;margin-bottom:18px;display:block;
+      animation:fl 3s ease-in-out infinite}
+    @keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+    .ag{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:18px}
+    .ag.sc{grid-template-columns:1fr}
+    .ab{background:#fff;border:3px solid transparent;border-radius:13px;padding:13px 15px;
+      cursor:pointer;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;
+      text-align:left;box-shadow:var(--sh-sm);transition:all .2s;
+      display:flex;align-items:center;gap:9px}
+    .al{width:28px;height:28px;border-radius:50%;background:var(--bg);
+      display:flex;align-items:center;justify-content:center;
+      font-weight:800;font-size:12px;flex-shrink:0}
+    .ab:hover:not(:disabled){border-color:var(--pri);transform:scale(1.02)}
+    .ab.sel{border-color:var(--pri);background:rgba(255,107,53,.06)}
+    .ab.ok{border-color:var(--grn);background:rgba(107,203,119,.1)}
+    .ab.ng{border-color:#ff4d4d;background:rgba(255,77,77,.08)}
+    .ab:disabled{cursor:default}
+    .fbp{border-radius:13px;padding:15px 17px;margin-top:5px;display:none;animation:su .3s ease}
+    @keyframes su{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .fbp.ok{background:rgba(107,203,119,.15);border:2px solid var(--grn)}
+    .fbp.ng{background:rgba(255,77,77,.08);border:2px solid #ff4d4d}
+    .fbt{font-family:'Baloo 2',cursive;font-size:17px;font-weight:800;margin-bottom:4px}
+    .fbp.ok .fbt{color:#3d9c4a}.fbp.ng .fbt{color:#c0392b}
+    .fbtx{font-size:14px;line-height:1.55}
+    .qa{width:100%;padding:15px;border-radius:13px;border:none;
+      font-family:'Baloo 2',cursive;font-size:18px;font-weight:800;
+      cursor:pointer;transition:transform .15s,box-shadow .15s;margin-top:9px}
+    .qa:hover{transform:translateY(-2px)}
+    .qa.chk{background:linear-gradient(135deg,var(--sec),#36a5a0);color:#fff;
+      box-shadow:0 6px 20px rgba(78,205,196,.35)}
+    .qa.chk:disabled{opacity:.5;cursor:default;transform:none}
+    .qa.nxt{background:linear-gradient(135deg,var(--pri),var(--pnk));color:#fff;
+      box-shadow:0 6px 20px rgba(255,107,53,.35);display:none}
+
+    /* ══════════ RESULT ══════════ */
+    #sc-result{background:linear-gradient(135deg,#A78BFA,#FF8FAB 50%,#FF6B35);
+      align-items:center;justify-content:center;padding:36px 18px}
+    .rc{background:#fff;border-radius:26px;padding:34px 26px;text-align:center;
+      max-width:440px;width:100%;box-shadow:0 20px 80px rgba(0,0,0,.2)}
+    .rt{font-size:72px;margin-bottom:13px;animation:bo .8s ease}
+    @keyframes bo{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
+    .rti{font-family:'Baloo 2',cursive;font-size:28px;font-weight:800;margin-bottom:5px}
+    .rts{color:var(--muted);font-size:14px;margin-bottom:22px}
+    .rs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:18px}
+    .sb{background:var(--bg);border-radius:13px;padding:13px 7px}
+    .sn{font-family:'Baloo 2',cursive;font-size:24px;font-weight:800;color:var(--pri)}
+    .sl{font-size:11px;font-weight:700;color:var(--muted);margin-top:2px}
+    .rxp{background:linear-gradient(135deg,var(--acc),#ffd700);border-radius:13px;
+      padding:13px;font-family:'Baloo 2',cursive;font-size:19px;font-weight:800;
+      color:#333;margin-bottom:18px}
+    .rb{width:100%;padding:15px;border-radius:13px;border:none;
+      font-family:'Baloo 2',cursive;font-size:17px;font-weight:800;
+      cursor:pointer;transition:transform .15s;margin-bottom:9px}
+    .rb:hover{transform:translateY(-2px)}
+    .rb.pri{background:linear-gradient(135deg,var(--pri),var(--pnk));color:#fff;
+      box-shadow:0 6px 20px rgba(255,107,53,.35)}
+    .rb.sec{background:var(--bg);color:var(--txt)}
+
+    /* ══════════ PROFILE VIEW ══════════ */
+    #sc-pv{background:var(--bg)}
+    .pv-hdr{background:linear-gradient(135deg,var(--pur),var(--pnk));
+      padding:34px 22px 48px;text-align:center;color:#fff}
+    .pv-av{width:86px;height:86px;border-radius:50%;background:rgba(255,255,255,.25);
+      display:flex;align-items:center;justify-content:center;font-size:44px;
+      margin:0 auto 10px;border:4px solid rgba(255,255,255,.5)}
+    .pv-nm{font-family:'Baloo 2',cursive;font-size:23px;font-weight:800}
+    .pv-ag{opacity:.85;font-size:13px;font-weight:600;margin-top:3px}
+    .pv-cd{display:inline-block;margin-top:10px;background:rgba(255,255,255,.2);
+      border:1px solid rgba(255,255,255,.4);padding:6px 15px;border-radius:50px;
+      font-family:'Baloo 2',cursive;font-size:13px;font-weight:800;
+      letter-spacing:1px;cursor:pointer}
+    .pv-con{padding:18px 18px 80px;max-width:580px;margin:-26px auto 0;position:relative}
+    .pv-sc{background:#fff;border-radius:19px;padding:18px;box-shadow:var(--sh-sm);margin-bottom:18px}
+    .pv-sg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;text-align:center}
+    .pvn{font-family:'Baloo 2',cursive;font-size:25px;font-weight:800}
+    .pvl{font-size:11px;font-weight:700;color:var(--muted);margin-top:2px}
+    .ach-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:11px}
+    .ach{background:#fff;border-radius:15px;padding:15px 9px;text-align:center;box-shadow:var(--sh-sm)}
+    .ach .ai{font-size:30px;margin-bottom:5px;display:block}
+    .ach .an{font-size:11px;font-weight:700;color:var(--muted)}
+    .ach.lk{opacity:.3;filter:grayscale(1)}
+    .sw-btn{width:100%;padding:13px;border-radius:13px;border:2px solid #eee;
+      background:#fff;font-family:'Baloo 2',cursive;font-size:15px;font-weight:700;
+      cursor:pointer;color:var(--muted);margin-top:14px;transition:border-color .2s,color .2s}
+    .sw-btn:hover{border-color:var(--pri);color:var(--pri)}
+
+    /* ══════════ EXPLORE / CHAT ══════════ */
+    #sc-explore{background:var(--bg)}
+    #chat-msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:9px;padding:14px 15px 7px}
+    .chat-bar{display:flex;gap:9px;padding:11px 15px;background:#fff;box-shadow:0 -2px 12px rgba(0,0,0,.06)}
+    .chat-in{flex:1;padding:11px 15px;border-radius:13px;border:2px solid #eee;
+      font-family:'Nunito',sans-serif;font-size:14px;font-weight:600;outline:none;
+      transition:border-color .2s}
+    .chat-in:focus{border-color:var(--sec)}
+    .chat-snd{padding:11px 17px;border-radius:13px;border:none;
+      background:linear-gradient(135deg,var(--pri),var(--pnk));
+      color:#fff;font-size:17px;cursor:pointer;transition:transform .15s}
+    .chat-snd:hover{transform:scale(1.05)}
+
+    /* confetti */
+    .cf{position:fixed;width:10px;height:10px;top:-18px;
+      animation:cff linear forwards;pointer-events:none;z-index:9999;border-radius:2px}
+    @keyframes cff{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+    @media(max-width:460px){.ag{grid-template-columns:1fr}.age-grid{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+
+<div id="loading"><div><span class="dot" style="background:var(--pri)"></span><span class="dot"></span><span class="dot"></span></div><div id="loading-txt">Lädt…</div></div>
+<div id="toast"></div>
+
+<!-- ══ SPLASH ══ -->
+<div class="screen active" id="sc-splash">
+  <div class="splash-logo">Lern<span>Welt</span> 🌍</div>
+  <div class="splash-sub">Spielend lernen – für jedes Kind!</div>
+  <div class="prof-list" id="prof-list"></div>
+  <div class="divider" id="divider" style="display:none"><span>oder neu starten</span></div>
+  <button class="sp-btn pri" onclick="showScreen('sc-create');setupCreate()">✨ Neues Profil anlegen</button>
+  <button class="sp-btn sec" onclick="showScreen('sc-join')">🔑 Mit Code einloggen</button>
+</div>
+
+<!-- ══ CREATE ══ -->
+<div class="screen" id="sc-create">
+  <div class="form-hdr"><h2>Neues Profil anlegen 🎉</h2><p>Avatar · Name · Altersgruppe wählen</p></div>
+  <div class="form-wrap">
+    <label class="lbl">Avatar wählen</label>
+    <div class="av-grid" id="av-grid"></div>
+    <label class="lbl">Dein Name</label>
+    <input class="txt-inp" id="cr-name" type="text" placeholder="z.B. Lena oder Max" maxlength="20">
+    <label class="lbl">Altersgruppe</label>
+    <div class="age-grid" id="age-grid"></div>
+    <button class="f-btn pri" onclick="createProfile()">Profil erstellen 🚀</button>
+    <button class="f-btn ghost" onclick="showScreen('sc-splash')">Zurück</button>
+  </div>
+</div>
+
+<!-- ══ JOIN ══ -->
+<div class="screen" id="sc-join">
+  <div class="join-hdr"><h2>Mit Code einloggen 🔑</h2><p>Gib deinen persönlichen Lern-Code ein</p></div>
+  <div style="width:100%;max-width:460px;padding:0 4px">
+    <div class="lbl" style="text-align:center;letter-spacing:2px">DEIN CODE (z.B. LÖWE-4821)</div>
+    <div class="code-row">
+      <input class="code-seg" id="cw" placeholder="LÖWE" maxlength="6"
+        oninput="this.value=this.value.toUpperCase();if(this.value.length>=4)document.getElementById('cn').focus()">
+      <div class="code-dash">–</div>
+      <input class="code-seg" id="cn" placeholder="4821" maxlength="4" inputmode="numeric">
+    </div>
+    <div class="code-hint">Den Code findest du in deinem Profil → <strong>Mein Code</strong></div>
+    <button class="f-btn pri" onclick="joinCode()" style="margin-bottom:11px">Einloggen ✓</button>
+    <button class="f-btn ghost" onclick="showScreen('sc-splash')">Zurück</button>
+  </div>
+</div>
+
+<!-- ══ HOME ══ -->
+<div class="screen" id="sc-home">
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-av" id="tb-av" onclick="navTo('profile')">🌟</div>
+      <div class="tb-name" id="tb-name">Hallo!</div>
+    </div>
+    <div class="tb-right">
+      <div class="xp-pill">⭐ <span id="xp-disp">0</span></div>
+      <div class="age-tag" id="age-tag">Mini</div>
+    </div>
+  </div>
+  <div class="hc">
+    <div class="greet" id="greet"></div>
+    <div class="greet-s" id="greet-s"></div>
+    <div class="streak-b">
+      <div class="streak-l">
+        <div style="font-size:34px">🔥</div>
+        <div>
+          <div style="font-size:11px;font-weight:700;opacity:.85;text-transform:uppercase;letter-spacing:1px">Lernserie</div>
+          <div style="font-family:'Baloo 2',cursive;font-size:28px;font-weight:800;line-height:1" id="streak-n">1</div>
+          <div style="font-size:12px;opacity:.85">Tag(e) in Folge</div>
+        </div>
+      </div>
+      <div style="text-align:right;font-size:13px;opacity:.85;font-weight:600">Weiter so! 💪</div>
+    </div>
+    <div class="sec-t">📚 Fächer</div>
+    <div class="sub-grid" id="sub-grid"></div>
+  </div>
+  <nav class="bnav">
+    <div class="nb on" onclick="navTo('home')"><div class="ni">🏠</div>Start</div>
+    <div class="nb" onclick="navTo('explore')"><div class="ni">🤖</div>KI-Tutor</div>
+    <div class="nb" onclick="navTo('profile')"><div class="ni">🏆</div>Profil</div>
+  </nav>
+</div>
+
+<!-- ══ LESSONS ══ -->
+<div class="screen" id="sc-lessons">
+  <div class="bbar">
+    <div class="bk" onclick="showScreen('sc-home')">←</div>
+    <div class="bbar-t" id="les-title">Fach</div>
+  </div>
+  <div class="lc" id="les-list"></div>
+</div>
+
+<!-- ══ QUIZ ══ -->
+<div class="screen" id="sc-quiz">
+  <div class="qt">
+    <div class="bk" onclick="if(confirm('Quiz beenden?'))showScreen('sc-lessons')">✕</div>
+    <div class="qpb"><div class="qpf" id="qpf" style="width:0%"></div></div>
+    <div class="qc" id="qc">1/5</div>
+  </div>
+  <div class="quiz-con">
+    <div class="q-tag" id="q-tag">🔢 Mathe</div>
+    <div class="q-txt" id="q-txt">Lädt…</div>
+    <span class="q-illus" id="q-illus"></span>
+    <div id="q-ans"></div>
+    <div class="fbp" id="fbp">
+      <div class="fbt" id="fbt"></div>
+      <div class="fbtx" id="fbtx"></div>
+    </div>
+    <button class="qa chk" id="chk-btn" onclick="checkAns()" disabled>Antwort prüfen ✓</button>
+    <button class="qa nxt" id="nxt-btn" onclick="nextQ()">Weiter →</button>
+  </div>
+</div>
+
+<!-- ══ RESULT ══ -->
+<div class="screen" id="sc-result">
+  <div class="rc">
+    <div class="rt" id="r-tr">🏆</div>
+    <div class="rti" id="r-ti">Super!</div>
+    <div class="rts" id="r-ts">Lektion abgeschlossen!</div>
+    <div class="rs">
+      <div class="sb"><div class="sn" id="r-ok">0</div><div class="sl">Richtig</div></div>
+      <div class="sb"><div class="sn" id="r-ng">0</div><div class="sl">Falsch</div></div>
+      <div class="sb"><div class="sn" id="r-pc">0%</div><div class="sl">Score</div></div>
+    </div>
+    <div class="rxp" id="r-xp">+50 XP ⭐</div>
+    <button class="rb pri" onclick="showScreen('sc-lessons')">Weiter lernen 📚</button>
+    <button class="rb sec" onclick="navTo('home')">Zum Menü</button>
+  </div>
+</div>
+
+<!-- ══ PROFILE VIEW ══ -->
+<div class="screen" id="sc-pv">
+  <div class="pv-hdr">
+    <div class="pv-av" id="pv-av">🌟</div>
+    <div class="pv-nm" id="pv-nm">Name</div>
+    <div class="pv-ag" id="pv-ag">Gruppe</div>
+    <div class="pv-cd" id="pv-cd" onclick="copyCode()">🔑 CODE</div>
+  </div>
+  <div class="pv-con">
+    <div class="pv-sc">
+      <div class="pv-sg">
+        <div><div class="pvn" id="pv-xp" style="color:var(--pri)">0</div><div class="pvl">Gesamt-XP</div></div>
+        <div><div class="pvn" id="pv-les" style="color:var(--sec)">0</div><div class="pvl">Lektionen</div></div>
+        <div><div class="pvn" id="pv-str" style="color:var(--pur)">0</div><div class="pvl">Tage-Serie</div></div>
+      </div>
+    </div>
+    <div class="sec-t" style="margin-top:0">🏅 Auszeichnungen</div>
+    <div class="ach-g" id="ach-g"></div>
+    <button class="sw-btn" onclick="switchProf()">↩ Profil wechseln</button>
+  </div>
+  <nav class="bnav">
+    <div class="nb" onclick="navTo('home')"><div class="ni">🏠</div>Start</div>
+    <div class="nb" onclick="navTo('explore')"><div class="ni">🤖</div>KI-Tutor</div>
+    <div class="nb on" onclick="navTo('profile')"><div class="ni">🏆</div>Profil</div>
+  </nav>
+</div>
+
+<!-- ══ EXPLORE ══ -->
+<div class="screen" id="sc-explore">
+  <div class="bbar">
+    <div class="bk" onclick="navTo('home')">←</div>
+    <div class="bbar-t">🤖 KI-Tutor</div>
+  </div>
+  <div id="chat-msgs"></div>
+  <div class="chat-bar">
+    <input class="chat-in" id="chat-in" placeholder="Stelle eine Frage…" onkeydown="if(event.key==='Enter')sendChat()">
+    <button class="chat-snd" onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<script type="module">
+// ── wait for firebase ──────────────────────────────────────
+function fbWait(){ return window._fbReady?Promise.resolve():new Promise(r=>document.addEventListener('firebase-ready',r,{once:true})) }
+
+// ── constants ──────────────────────────────────────────────
+const AVATARS=['🐣','🦊','🦁','🦅','🐸','🐼','🦄','🐯','🐧','🦋'];
+const WORDS=['LÖWE','TIGER','ADLER','FUCHS','BIENE','IGEL','OTTER','WOLF','LUCHS','DACHS'];
+const ACF={
+  mini:  {label:'Mini',  range:'3–5 J.',  em:'🐣',col:'#6BCB77',xm:1},
+  junior:{label:'Junior',range:'6–8 J.',  em:'🦊',col:'#4ECDC4',xm:1.5},
+  mittel:{label:'Mittel',range:'9–12 J.', em:'🦁',col:'#FF6B35',xm:2},
+  profi: {label:'Profi', range:'13–16 J.',em:'🦅',col:'#A78BFA',xm:3},
+};
+const SUBS={
+  mini:[
+    {id:'farben',    name:'Farben',      icon:'🎨',col:'#FF8FAB',bg:'linear-gradient(135deg,#FF8FAB,#FFB3C6)',les:4},
+    {id:'tiere',     name:'Tiere',       icon:'🦋',col:'#6BCB77',bg:'linear-gradient(135deg,#6BCB77,#9EE09E)',les:5},
+    {id:'zahlen',    name:'Zahlen 1–10', icon:'🔢',col:'#4ECDC4',bg:'linear-gradient(135deg,#4ECDC4,#88E3DE)',les:4},
+    {id:'buchstaben',name:'Buchstaben',  icon:'🔤',col:'#FF6B35',bg:'linear-gradient(135deg,#FF6B35,#FF9F6B)',les:4},
+    {id:'formen',    name:'Formen',      icon:'🔷',col:'#A78BFA',bg:'linear-gradient(135deg,#A78BFA,#C4B5FD)',les:3},
+    {id:'koerper',   name:'Mein Körper', icon:'🧍',col:'#FFD166',bg:'linear-gradient(135deg,#FFD166,#FFE4A0)',les:3},
+  ],
+  junior:[
+    {id:'mathe',    name:'Mathe',     icon:'🔢',col:'#4ECDC4',bg:'linear-gradient(135deg,#4ECDC4,#88E3DE)',les:6},
+    {id:'lesen',    name:'Lesen',     icon:'📖',col:'#FF6B35',bg:'linear-gradient(135deg,#FF6B35,#FF9F6B)',les:5},
+    {id:'schreiben',name:'Schreiben', icon:'✏️',col:'#A78BFA',bg:'linear-gradient(135deg,#A78BFA,#C4B5FD)',les:5},
+    {id:'sachkunde',name:'Sachkunde', icon:'🌍',col:'#6BCB77',bg:'linear-gradient(135deg,#6BCB77,#9EE09E)',les:4},
+    {id:'englisch', name:'Englisch',  icon:'🇬🇧',col:'#FF8FAB',bg:'linear-gradient(135deg,#FF8FAB,#FFB3C6)',les:5},
+    {id:'musik',    name:'Musik',     icon:'🎵',col:'#FFD166',bg:'linear-gradient(135deg,#FFD166,#FFE4A0)',les:3},
+  ],
+  mittel:[
+    {id:'mathe',     name:'Mathematik',icon:'📐',col:'#4ECDC4',bg:'linear-gradient(135deg,#4ECDC4,#36a5a0)',les:8},
+    {id:'deutsch',   name:'Deutsch',   icon:'📝',col:'#FF6B35',bg:'linear-gradient(135deg,#FF6B35,#cc5528)',les:7},
+    {id:'englisch',  name:'Englisch',  icon:'🇬🇧',col:'#FF8FAB',bg:'linear-gradient(135deg,#FF8FAB,#e0607a)',les:6},
+    {id:'geschichte',name:'Geschichte',icon:'🏛️',col:'#A78BFA',bg:'linear-gradient(135deg,#A78BFA,#7c5cbf)',les:5},
+    {id:'geografie', name:'Geografie', icon:'🌍',col:'#6BCB77',bg:'linear-gradient(135deg,#6BCB77,#4a9955)',les:5},
+    {id:'biologie',  name:'Biologie',  icon:'🌿',col:'#FFD166',bg:'linear-gradient(135deg,#FFD166,#d4a017)',les:5},
+  ],
+  profi:[
+    {id:'mathe',     name:'Algebra',       icon:'➕',col:'#4ECDC4',bg:'linear-gradient(135deg,#4ECDC4,#249a94)',les:9},
+    {id:'physik',    name:'Physik',        icon:'⚡',col:'#FF6B35',bg:'linear-gradient(135deg,#FF6B35,#aa3d18)',les:7},
+    {id:'chemie',    name:'Chemie',        icon:'🧪',col:'#A78BFA',bg:'linear-gradient(135deg,#A78BFA,#6c45d4)',les:6},
+    {id:'englisch',  name:'Englisch B1/B2',icon:'🇬🇧',col:'#FF8FAB',bg:'linear-gradient(135deg,#FF8FAB,#c04060)',les:7},
+    {id:'informatik',name:'Informatik',    icon:'💻',col:'#6BCB77',bg:'linear-gradient(135deg,#6BCB77,#3a8c46)',les:6},
+    {id:'geschichte',name:'Geschichte',    icon:'📜',col:'#FFD166',bg:'linear-gradient(135deg,#FFD166,#b8860b)',les:6},
+  ],
+};
+const LN={
+  mini:{
+    farben:['Rot, Blau & Gelb','Grün & Orange','Mischen von Farben','Farben im Alltag'],
+    tiere:['Haustiere','Bauernhoftiere','Wildtiere','Wassertiere','Vögel'],
+    zahlen:['Zahlen 1–3','Zahlen 4–6','Zahlen 7–10','Zählen üben'],
+    buchstaben:['A, B, C','D, E, F','G, H, I','Mein Name'],
+    formen:['Kreis & Quadrat','Dreieck & Rechteck','Formen in der Natur'],
+    koerper:['Kopf & Gesicht','Arme & Beine','Innere Organe'],
+  },
+  junior:{
+    mathe:['Plus bis 20','Minus bis 20','Plus bis 100','Minus bis 100','Malreihen 2 & 5','Malreihen 3 & 4'],
+    lesen:['Silben lesen','Kurze Wörter','Sätze lesen','Kleine Geschichte','Laut & leise'],
+    schreiben:['Druckbuchstaben','Großschreibung','Satzzeichen','Mein erster Brief','Diktat'],
+    sachkunde:['Die vier Jahreszeiten','Tiere im Winter','Unser Wetter','Die Feuerwehr'],
+    englisch:['Hello & Goodbye','Numbers 1–10','Colors','My Family','Animals in English'],
+    musik:['Rhythmus klatschen','Noten kennenlernen','Deutsche Kinderlieder'],
+  },
+  mittel:{
+    mathe:['Brüche verstehen','Brüche addieren','Dezimalzahlen','Geometrie: Flächen','Prozentrechnung','Gleichungen','Statistik','Negative Zahlen'],
+    deutsch:['Wortarten','Satzglieder','Kommaregeln','Aufsatz schreiben','Rechtschreibung','Literatur','Gedichte analysieren'],
+    englisch:['Simple Past','Present Perfect','Vokabeln Alltag','Reading Comprehension','Writing Skills','Listening'],
+    geschichte:['Das alte Ägypten','Antikes Rom','Mittelalter','Reformation','Industriezeitalter'],
+    geografie:['Kontinente & Ozeane','Bundesländer','Klima & Wetter','Bevölkerung','Naturkatastrophen'],
+    biologie:['Zellen','Pflanzen & Photosynthese','Ökosysteme','Evolution','Menschlicher Körper'],
+  },
+  profi:{
+    mathe:['Lineare Funktionen','Quadratische Gleichungen','Trigonometrie','Wahrscheinlichkeit','Vektoren','Differentialrechnung I','Integralrechnung I','Stochastik','Analytische Geometrie'],
+    physik:['Newtonsche Gesetze','Energie & Arbeit','Elektrizität','Magnetismus','Wellen & Optik','Relativitätstheorie','Quantenphysik'],
+    chemie:['Atombau','Periodensystem','Chemische Bindungen','Säuren & Basen','Organische Chemie','Redox-Reaktionen'],
+    englisch:['Complex Sentence Structures','Advanced Vocabulary','Essay Writing','Media Literacy','Literature Analysis','Presentations','C1 Preparation'],
+    informatik:['Algorithmen & Logik','Python Grundlagen','Datenstrukturen','Web-Grundlagen','Künstliche Intelligenz','Cybersicherheit'],
+    geschichte:['Weimarer Republik','Nationalsozialismus','Zweiter Weltkrieg','Kalter Krieg','Wiedervereinigung','Globalisierung'],
+  },
+};
+const ACHS=[
+  {id:'first',  icon:'🌟',name:'Erster Start',   cond:p=>p.lessonsCompleted>=1},
+  {id:'five',   icon:'🎯',name:'5 Lektionen',    cond:p=>p.lessonsCompleted>=5},
+  {id:'ten',    icon:'🏅',name:'10 Lektionen',   cond:p=>p.lessonsCompleted>=10},
+  {id:'xp100',  icon:'💎',name:'100 XP',         cond:p=>p.xp>=100},
+  {id:'xp500',  icon:'👑',name:'500 XP',         cond:p=>p.xp>=500},
+  {id:'streak3',icon:'🔥',name:'3 Tage Serie',   cond:p=>p.streak>=3},
+  {id:'perfect',icon:'✨',name:'Perfekte Runde', cond:p=>p._lastPerfect},
+];
+
+// ── state ──────────────────────────────────────────────────
+const S={
+  prof:null, sub:null, lesson:null,
+  qs:[], qi:0, sel:null, ok:0, ng:0, ans:false,
+  chat:[], chatInit:false,
+};
+let selAv=AVATARS[0], selAge='junior';
+
+// ── helpers ───────────────────────────────────────────────
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0)}
+function loading(on,txt='Lädt…'){document.getElementById('loading').classList.toggle('on',on);document.getElementById('loading-txt').textContent=txt}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2600)}
+function confetti(){const cols=['#FF6B35','#4ECDC4','#FFE66D','#A78BFA','#6BCB77','#FF8FAB'];for(let i=0;i<55;i++){const c=document.createElement('div');c.className='cf';c.style.left=Math.random()*100+'vw';c.style.background=cols[Math.floor(Math.random()*cols.length)];c.style.animationDuration=(Math.random()*2+1.5)+'s';c.style.animationDelay=(Math.random()*.5)+'s';c.style.borderRadius=Math.random()>.5?'50%':'2px';document.body.appendChild(c);setTimeout(()=>c.remove(),4000)}}
+function navTo(tab){
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  if(tab==='home'){renderHome();showScreen('sc-home');document.querySelectorAll('.nb')[0].classList.add('on')}
+  else if(tab==='explore'){initChat();showScreen('sc-explore');document.querySelectorAll('.nb')[1].classList.add('on')}
+  else if(tab==='profile'){renderPV();showScreen('sc-pv');document.querySelectorAll('.nb')[2].classList.add('on')}
+}
+window.showScreen=showScreen;window.navTo=navTo;
+
+// ── firebase ───────────────────────────────────────────────
+async function fbGet(id){const{doc,getDoc}=window._fs;const s=await getDoc(doc(window._db,'profiles',id));return s.exists()?s.data():null}
+async function fbSet(id,data){const{doc,setDoc}=window._fs;await setDoc(doc(window._db,'profiles',id),data,{merge:true})}
+async function fbCode(code){const{doc,getDoc}=window._fs;const s=await getDoc(doc(window._db,'codes',code));if(!s.exists())return null;return fbGet(s.data().profileId)}
+async function fbCodeSet(code,pid){const{doc,setDoc}=window._fs;await setDoc(doc(window._db,'codes',code),{profileId:pid})}
+async function fbUpdate(p){const{doc,updateDoc}=window._fs;await updateDoc(doc(window._db,'profiles',p.id),{xp:p.xp,lessonsCompleted:p.lessonsCompleted,streak:p.streak,_lastPerfect:p._lastPerfect,completedLessons:p.completedLessons})}
+
+// ── local storage ──────────────────────────────────────────
+const LS='lw_profiles';
+function lsGet(){try{return JSON.parse(localStorage.getItem(LS)||'[]')}catch{return[]}}
+function lsSave(p){const a=lsGet().filter(x=>x.id!==p.id);a.unshift({id:p.id,name:p.name,avatar:p.avatar,age:p.age,code:p.code});localStorage.setItem(LS,JSON.stringify(a.slice(0,10)))}
+
+// ── code ───────────────────────────────────────────────────
+function genCode(){return WORDS[Math.floor(Math.random()*WORDS.length)]+'-'+String(Math.floor(1000+Math.random()*9000))}
+
+// ── splash ─────────────────────────────────────────────────
+function renderSplash(){
+  const saved=lsGet();
+  const list=document.getElementById('prof-list');
+  const div=document.getElementById('divider');
+  list.innerHTML='';
+  div.style.display=saved.length?'flex':'none';
+  saved.forEach(p=>{
+    const cfg=ACF[p.age]||ACF.junior;
+    const c=document.createElement('div');c.className='prof-card';
+    c.innerHTML=`<div class="prof-av" style="background:${cfg.col}22">${p.avatar}</div><div class="prof-info"><div class="prof-name">${p.name}</div><div class="prof-meta">${cfg.em} ${cfg.label} · ${cfg.range}</div></div><div class="prof-code">${p.code}</div>`;
+    c.onclick=()=>loadLocal(p);list.appendChild(c);
+  });
+}
+async function loadLocal(local){
+  loading(true,'Fortschritt wird geladen…');
+  await fbWait();
+  try{const fresh=await fbGet(local.id);S.prof=fresh||local}
+  catch{S.prof=local}
+  lsSave(S.prof);loading(false);renderHome();showScreen('sc-home');
+}
+
+// ── create ─────────────────────────────────────────────────
+function setupCreate(){
+  const g=document.getElementById('av-grid');g.innerHTML='';
+  AVATARS.forEach(a=>{const d=document.createElement('div');d.className='av-opt'+(a===selAv?' sel':'');d.textContent=a;d.onclick=()=>{selAv=a;g.querySelectorAll('.av-opt').forEach(x=>x.classList.remove('sel'));d.classList.add('sel')};g.appendChild(d)});
+  const ag=document.getElementById('age-grid');ag.innerHTML='';
+  Object.entries(ACF).forEach(([k,c])=>{const d=document.createElement('div');d.className='age-opt'+(k===selAge?' sel':'');d.innerHTML=`<span class="emo">${c.em}</span><div class="lbl2">${c.label}</div><div class="rng">${c.range}</div>`;d.onclick=()=>{selAge=k;ag.querySelectorAll('.age-opt').forEach(x=>x.classList.remove('sel'));d.classList.add('sel')};ag.appendChild(d)});
+}
+window.setupCreate=setupCreate;
+
+async function createProfile(){
+  const name=document.getElementById('cr-name').value.trim();
+  if(!name){toast('Bitte einen Namen eingeben! 👆');return}
+  loading(true,'Profil wird erstellt…');await fbWait();
+  const id='p_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  const code=genCode();
+  const prof={id,name,avatar:selAv,age:selAge,code,xp:0,streak:1,lessonsCompleted:0,completedLessons:[],_lastPerfect:false,createdAt:new Date().toISOString()};
+  try{
+    await fbSet(id,prof);await fbCodeSet(code,id);
+    S.prof=prof;lsSave(prof);loading(false);
+    toast(`Profil erstellt! Dein Code: ${code} 🎉`);renderHome();showScreen('sc-home');
+  }catch(e){loading(false);toast('Firebase nicht konfiguriert – Anleitung lesen! ⚠️');console.error(e)}
+}
+window.createProfile=createProfile;
+
+async function joinCode(){
+  const w=document.getElementById('cw').value.trim().toUpperCase();
+  const n=document.getElementById('cn').value.trim();
+  if(!w||!n){toast('Bitte vollständigen Code eingeben! 🔑');return}
+  const code=`${w}-${n}`;
+  loading(true,'Profil wird geladen…');await fbWait();
+  try{
+    const prof=await fbCode(code);
+    if(!prof){loading(false);toast('Code nicht gefunden. Nochmal prüfen! 🔍');return}
+    S.prof=prof;lsSave(prof);loading(false);toast(`Willkommen zurück, ${prof.name}! 👋`);renderHome();showScreen('sc-home');
+  }catch(e){loading(false);toast('Verbindungsfehler – Firebase konfiguriert? ⚠️');console.error(e)}
+}
+window.joinCode=joinCode;
+
+// ── home ───────────────────────────────────────────────────
+function renderHome(){
+  const p=S.prof,cfg=ACF[p.age];
+  document.getElementById('tb-av').textContent=p.avatar;
+  document.getElementById('tb-name').textContent=p.name;
+  document.getElementById('xp-disp').textContent=p.xp;
+  document.getElementById('age-tag').textContent=cfg.em+' '+cfg.label;
+  document.getElementById('age-tag').style.background=cfg.col;
+  document.getElementById('streak-n').textContent=p.streak;
+  const gs={mini:['Hallo, kleiner Stern! ⭐','Bereit zum Spielen? 🎮'],junior:['Hey '+p.name+'! 🦊','Wissensdurst? 📚'],mittel:['Bereit? 🦁','Was lernst du heute?'],profi:['Hallo, '+p.name+'! 🦅','Zeit durchzustarten? 🚀']};
+  const a=gs[p.age];
+  document.getElementById('greet').textContent=a[Math.floor(Math.random()*a.length)];
+  document.getElementById('greet-s').textContent=cfg.label+' ('+cfg.range+')';
+  const gr=document.getElementById('sub-grid');gr.innerHTML='';
+  SUBS[p.age].forEach(sub=>{
+    const done=(p.completedLessons||[]).filter(l=>l.startsWith(sub.id+'_')).length;
+    const pct=Math.round((done/sub.les)*100);
+    const c=document.createElement('div');c.className='sub-card';c.style.background=sub.bg;
+    c.innerHTML=`<span class="si">${sub.icon}</span><div class="sn">${sub.name}</div><div class="sp"><div class="spb" style="width:${pct}%"></div></div>`;
+    c.onclick=()=>openSub(sub);gr.appendChild(c);
+  });
+}
+
+// ── lessons ────────────────────────────────────────────────
+function openSub(sub){
+  S.sub=sub;
+  document.getElementById('les-title').textContent=sub.icon+' '+sub.name;
+  const list=document.getElementById('les-list');list.innerHTML='';
+  const names=(LN[S.prof.age]||{})[sub.id]||[];
+  const xpPer=Math.round(30*ACF[S.prof.age].xm);
+  for(let i=0;i<sub.les;i++){
+    const title=names[i]||`Lektion ${i+1}`;
+    const key=`${sub.id}_${i}`;
+    const done=(S.prof.completedLessons||[]).includes(key);
+    const c=document.createElement('div');c.className='les-card';
+    c.innerHTML=`<div class="les-num" style="background:${sub.col}">${i+1}</div><div class="les-info"><div class="les-t">${title}</div><div class="les-m">5 Fragen · ${xpPer} XP</div></div>${done?'<div class="les-done">✅</div>':`<div class="les-xp">+${xpPer} XP</div>`}`;
+    const idx=i;c.onclick=()=>startLesson(sub,idx,title);list.appendChild(c);
+  }
+  showScreen('sc-lessons');
+}
+
+// ── quiz ───────────────────────────────────────────────────
+async function startLesson(sub,index,title){
+  S.lesson={sub,index,title};S.qi=0;S.ok=0;S.ng=0;S.qs=[];S.ans=false;
+  loading(true,'KI erstellt deine Aufgaben…');showScreen('sc-quiz');
+  try{S.qs=await genQs(sub,index,title)}catch{S.qs=fbQs(title)}
+  loading(false);renderQ();
+}
+
+async function genQs(sub,index,title){
+  const cfg=ACF[S.prof.age];
+  const prompt=`Du bist Lehrexperte für Kinder. Erstelle genau 5 abwechslungsreiche Lernfragen auf Deutsch:
+Altersgruppe: ${cfg.label} (${cfg.range})
+Fach: ${sub.name}
+Lektion: ${title}
+Schwierigkeit exakt anpassen:
+- Mini (3-5): Sehr einfach, 2 Antworten
+- Junior (6-8): Einfach, spielerisch, 4 Antworten
+- Mittel (9-12): Mittelschwer, schulrelevant, 4 Antworten
+- Profi (13-16): Anspruchsvoll, 4 Antworten
+Antworte NUR mit JSON-Array (kein Markdown):
+[{"type":"multiple","question":"...","illustration":"Emoji","answers":["A","B","C","D"],"correct":0,"explanation":"Kurze Erklärung"}]`;
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
+  const d=await r.json();
+  return JSON.parse(d.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim());
+}
+function fbQs(title){return[{type:'truefalse',question:`"${title}" ist ein spannendes Thema!`,illustration:'🤔',answers:['Richtig','Falsch'],correct:0,explanation:'Lernen macht Spaß!'},{type:'multiple',question:'Was hilft beim Lernen?',illustration:'📚',answers:['Schlafen','Üben & Wiederholen','Handy spielen','Nichts tun'],correct:1,explanation:'Üben hilft!'}]}
+
+function renderQ(){
+  const q=S.qs[S.qi],t=S.qs.length;
+  S.ans=false;S.sel=null;
+  document.getElementById('qpf').style.width=(S.qi/t*100)+'%';
+  document.getElementById('qc').textContent=`${S.qi+1}/${t}`;
+  const tag=document.getElementById('q-tag');tag.textContent=S.sub.icon+' '+S.sub.name;tag.style.background=S.sub.col;
+  document.getElementById('q-txt').textContent=q.question;
+  document.getElementById('q-illus').textContent=q.illustration||'';
+  const con=document.getElementById('q-ans');con.innerHTML='';
+  const isTF=q.type==='truefalse'||q.answers.length===2;
+  const gr=document.createElement('div');gr.className='ag'+(isTF?' sc':'');
+  const letters=['A','B','C','D'];
+  q.answers.forEach((ans,i)=>{
+    const btn=document.createElement('button');btn.className='ab';
+    btn.innerHTML=`<span class="al">${letters[i]}</span><span>${ans}</span>`;
+    btn.onclick=()=>{if(S.ans)return;S.sel=i;con.querySelectorAll('.ab').forEach((b,j)=>b.classList.toggle('sel',j===i));document.getElementById('chk-btn').disabled=false};
+    gr.appendChild(btn);
+  });
+  con.appendChild(gr);
+  const fb=document.getElementById('fbp');fb.style.display='none';fb.className='fbp';
+  document.getElementById('chk-btn').style.display='block';
+  document.getElementById('chk-btn').disabled=true;
+  document.getElementById('nxt-btn').style.display='none';
+}
+
+function checkAns(){
+  if(S.ans||S.sel===null)return;S.ans=true;
+  const q=S.qs[S.qi];const ok=S.sel===q.correct;
+  if(ok)S.ok++;else S.ng++;
+  document.querySelectorAll('.ab').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.classList.add('ok');else if(i===S.sel&&!ok)b.classList.add('ng')});
+  const fb=document.getElementById('fbp');fb.style.display='block';fb.className='fbp '+(ok?'ok':'ng');
+  document.getElementById('fbt').textContent=ok?['Super! 🎉','Richtig! ✅','Klasse! 🌟','Jawohl! 🎯'][Math.floor(Math.random()*4)]:['Fast! 💪','Nicht ganz…','Schade! 🙁','Versuche es nächstes Mal!'][Math.floor(Math.random()*4)];
+  document.getElementById('fbtx').textContent=q.explanation||'';
+  document.getElementById('chk-btn').style.display='none';document.getElementById('nxt-btn').style.display='block';
+}
+window.checkAns=checkAns;
+
+function nextQ(){S.qi++;if(S.qi>=S.qs.length)finishLesson();else renderQ()}
+window.nextQ=nextQ;
+
+// ── finish ─────────────────────────────────────────────────
+async function finishLesson(){
+  const p=S.prof,total=S.qs.length;
+  const pct=Math.round(S.ok/total*100);
+  const xp=Math.round((S.ok/total)*50*ACF[p.age].xm);
+  p.xp+=xp;p._lastPerfect=pct===100;
+  const key=`${S.lesson.sub.id}_${S.lesson.index}`;
+  if(!p.completedLessons)p.completedLessons=[];
+  if(!p.completedLessons.includes(key)){p.completedLessons.push(key);p.lessonsCompleted=p.completedLessons.length}
+  try{await fbWait();await fbUpdate(p)}catch(e){console.warn('sync fail',e)}
+  lsSave(p);
+  const tr=pct>=90?'🏆':pct>=70?'🥈':pct>=50?'🥉':'💪';
+  const ti=pct>=90?'Fantastisch!':pct>=70?'Sehr gut!':pct>=50?'Gut gemacht!':'Weiter üben!';
+  document.getElementById('r-tr').textContent=tr;document.getElementById('r-ti').textContent=ti;
+  document.getElementById('r-ts').textContent=`"${S.lesson.title}" abgeschlossen!`;
+  document.getElementById('r-ok').textContent=S.ok;document.getElementById('r-ng').textContent=S.ng;
+  document.getElementById('r-pc').textContent=pct+'%';document.getElementById('r-xp').textContent=`+${xp} XP verdient! ⭐`;
+  document.getElementById('xp-disp').textContent=p.xp;
+  if(pct>=70)confetti();showScreen('sc-result');
+}
+
+// ── profile view ───────────────────────────────────────────
+function renderPV(){
+  const p=S.prof,cfg=ACF[p.age];
+  document.getElementById('pv-av').textContent=p.avatar;
+  document.getElementById('pv-nm').textContent=p.name;
+  document.getElementById('pv-ag').textContent=cfg.em+' '+cfg.label+' ('+cfg.range+')';
+  document.getElementById('pv-cd').textContent='🔑 '+p.code;
+  document.getElementById('pv-xp').textContent=p.xp;
+  document.getElementById('pv-les').textContent=p.lessonsCompleted||0;
+  document.getElementById('pv-str').textContent=p.streak;
+  const g=document.getElementById('ach-g');g.innerHTML='';
+  ACHS.forEach(a=>{const el=document.createElement('div');el.className='ach'+(a.cond(p)?'':' lk');el.innerHTML=`<span class="ai">${a.icon}</span><div class="an">${a.name}</div>`;g.appendChild(el)});
+}
+
+function copyCode(){const code=S.prof.code;navigator.clipboard.writeText(code).then(()=>toast('Code kopiert: '+code+' 📋')).catch(()=>toast('Dein Code: '+code))}
+window.copyCode=copyCode;
+
+function switchProf(){S.prof=null;S.chatInit=false;S.chat=[];renderSplash();showScreen('sc-splash')}
+window.switchProf=switchProf;
+
+// ── chat ───────────────────────────────────────────────────
+let mid=0;
+function initChat(){
+  if(S.chatInit)return;S.chatInit=true;
+  const p=S.prof,cfg=ACF[p.age];
+  appendMsg('a',`Hallo ${p.name}! 👋 Ich bin dein KI-Tutor für die Gruppe **${cfg.label}** (${cfg.range}). Was möchtest du wissen?`);
+}
+
+async function sendChat(){
+  const inp=document.getElementById('chat-in');const text=inp.value.trim();if(!text)return;
+  inp.value='';appendMsg('u',text);S.chat.push({role:'user',content:text});
+  const tid=appendMsg('a','…');
+  const cfg=ACF[S.prof.age];
+  const sys=`Du bist freundlicher Lernassistent für ${S.prof.name}, Altersgruppe "${cfg.label}" (${cfg.range}). Antworte IMMER auf Deutsch, kurz und altersgerecht. Mini: sehr einfach+Emojis. Junior: spielerisch. Mittel: schulrelevant. Profi: sachlich+tiefgründig. Max. 3-4 Sätze.`;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,system:sys,messages:S.chat})});
+    const d=await r.json();const reply=d.content.map(b=>b.text||'').join('');
+    S.chat.push({role:'assistant',content:reply});updMsg(tid,reply);
+  }catch{updMsg(tid,'Ups, Fehler. Nochmal versuchen! 😅')}
+}
+window.sendChat=sendChat;
+
+function appendMsg(role,text){
+  const id='m'+(++mid);const w=document.getElementById('chat-msgs');
+  const d=document.createElement('div');d.id=id;
+  d.style.cssText=`display:flex;flex-direction:column;align-items:${role==='u'?'flex-end':'flex-start'};`;
+  const b=document.createElement('div');
+  b.style.cssText=`max-width:80%;padding:10px 14px;border-radius:${role==='u'?'17px 17px 4px 17px':'17px 17px 17px 4px'};font-size:14px;line-height:1.5;font-weight:600;background:${role==='u'?'linear-gradient(135deg,var(--pri),var(--pnk))':'#fff'};color:${role==='u'?'#fff':'var(--txt)'};box-shadow:var(--sh-sm);`;
+  b.textContent=text;d.appendChild(b);w.appendChild(d);w.scrollTop=w.scrollHeight;return id;
+}
+function updMsg(id,text){const el=document.getElementById(id);if(el)el.querySelector('div').textContent=text;document.getElementById('chat-msgs').scrollTop=9999}
+
+// ── init ───────────────────────────────────────────────────
+renderSplash();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
