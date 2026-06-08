@@ -731,13 +731,44 @@
     </div>
 
     <div class="card">
-      <div style="font-family:'Baloo 2',cursive;font-size:17px;font-weight:800;margin-bottom:8px">ℹ️ Über LernWelt</div>
+      <div style="font-family:'Baloo 2',cursive;font-size:17px;font-weight:800;margin-bottom:10px">🔄 App aktualisieren</div>
+      <div style="font-size:13px;color:#888;font-weight:600;line-height:1.6;margin-bottom:14px">
+        Falls du eine ältere Version siehst, erzwingt dieser Button einen vollständigen Neustart und löscht den Browser-Cache der App.
+      </div>
+      <button onclick="hardRefresh()"
+        style="width:100%;padding:14px;border-radius:13px;border:none;
+          background:linear-gradient(135deg,#4ECDC4,#36a5a0);color:#fff;
+          font-family:'Baloo 2',cursive;font-size:17px;font-weight:800;
+          cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation">
+        🔄 Hard Refresh (Cache leeren)
+      </button>
+    </div>
       <div style="font-size:13px;color:#555;line-height:1.7;font-weight:600">
         🌍 Lern-App für Kinder von 3–16 Jahren<br>
         🔥 Altersgerechte Inhalte in 4 Stufen<br>
         ☁️ Fortschritte in der Cloud gespeichert<br>
         🔑 Geräteübergreifend per Code – kein Login<br>
         📦 Version 3.0
+      </div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid #f0f0f0;
+        display:flex;align-items:center;gap:12px">
+        <div style="width:42px;height:42px;border-radius:50%;
+          background:linear-gradient(135deg,#FF6B35,#A78BFA);
+          display:flex;align-items:center;justify-content:center;
+          font-size:20px;flex-shrink:0">👨‍💻</div>
+        <div>
+          <div style="font-family:'Baloo 2',cursive;font-size:14px;font-weight:800;color:var(--txt)">Entwickelt von</div>
+          <div style="font-family:'Baloo 2',cursive;font-size:17px;font-weight:800;
+            background:linear-gradient(135deg,#FF6B35,#A78BFA);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+            background-clip:text">René Prause</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;background:var(--bg);border-radius:10px;
+        padding:8px 12px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:11px;font-weight:700;color:var(--muted)">App-Version</span>
+        <span style="font-family:'Baloo 2',cursive;font-size:13px;font-weight:800;
+          color:var(--pri)">v3.0</span>
       </div>
     </div>
 
@@ -1536,9 +1567,49 @@ function appendMsg(role,text){
 }
 function updMsg(id,text){const el=document.getElementById(id);if(el)el.querySelector("div").innerHTML=mdToHtml(text);document.getElementById("chat-msgs").scrollTop=9999}
 
+// ── hard refresh & SW update ───────────────────────────────
+async function hardRefresh() {
+  toast('Cache wird geleert… 🔄');
+  try {
+    // 1. Tell SW to skip waiting
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage('SKIP_WAITING');
+    }
+    // 2. Delete all caches
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+    // 3. Unregister all service workers
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map(r => r.unregister()));
+  } catch(e) { console.warn('Cache clear error:', e); }
+  // 4. Hard reload with cache bypass
+  setTimeout(() => {
+    window.location.href = window.location.href.split('?')[0] + '?v=' + Date.now();
+  }, 600);
+}
+window.hardRefresh = hardRefresh;
+
+// Auto-detect SW update and prompt user
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+      newSW.addEventListener('statechange', () => {
+        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+          // New version available
+          toast('🆕 Update verfügbar – Hard Refresh empfohlen!');
+        }
+      });
+    });
+  }).catch(() => {});
+  // Reload when SW takes control (after skipWaiting)
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
+  });
+}
+
 // ── init ───────────────────────────────────────────────────
 renderSplash();updateKeyStatus();
-if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
 </html>
