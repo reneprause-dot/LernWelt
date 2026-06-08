@@ -4,42 +4,39 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#FF6B35">
-  <title>LernWelt – Spielend lernen!</title>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <!-- v2.5 -->
+  <!-- v3.0 -->
+  <title>LernWelt – Spielend lernen!</title>
   <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Firebase SDK (ESM) -->
+  <!-- Firebase -->
   <script type="module">
-    import { initializeApp }
-      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getFirestore, doc, getDoc, setDoc, updateDoc }
-      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     const firebaseConfig = {
-      apiKey:            "AIzaSyDcB9c4oozG--l9Yag08PC7KoFzFu7Axpo",
-      authDomain:        "lernwelt-814e3.firebaseapp.com",
-      projectId:         "lernwelt-814e3",
-      storageBucket:     "lernwelt-814e3.firebasestorage.app",
-      messagingSenderId: "137162920496",
-      appId:             "1:137162920496:web:bb7773ed3c10501b0693f5",
-      measurementId:     "G-395EF9YC1B"
+      apiKey:"AIzaSyDcB9c4oozG--l9Yag08PC7KoFzFu7Axpo",
+      authDomain:"lernwelt-814e3.firebaseapp.com",
+      projectId:"lernwelt-814e3",
+      storageBucket:"lernwelt-814e3.firebasestorage.app",
+      messagingSenderId:"137162920496",
+      appId:"1:137162920496:web:bb7773ed3c10501b0693f5",
+      measurementId:"G-395EF9YC1B"
     };
-
     const app = initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
+    const db = getFirestore(app);
     window._db = db;
-    window._fs = { doc, getDoc, setDoc, updateDoc };
+    window._fs = { doc, getDoc, setDoc, updateDoc, collection, getDocs };
     window._fbReady = true;
-    document.dispatchEvent(new Event('firebase-ready'));
+    document.dispatchEvent(new Event("firebase-ready"));
   </script>
 
   <style>
-    :root{
+    :root {
       --pri:#FF6B35; --sec:#4ECDC4; --acc:#FFE66D;
       --pur:#A78BFA; --grn:#6BCB77; --pnk:#FF8FAB;
       --bg:#FFF8F0;  --card:#fff;   --txt:#2D2D2D; --muted:#888;
@@ -47,10 +44,9 @@
       --sh-sm:0 2px 12px rgba(0,0,0,.07);
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html{scroll-behavior:smooth;height:100%}
-    body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--txt);
-      min-height:100vh;overflow-x:hidden;overflow-y:auto;
-      -webkit-text-size-adjust:100%;text-size-adjust:100%}
+    html{height:100%;-webkit-text-size-adjust:100%}
+    body{font-family:"Nunito",sans-serif;background:var(--bg);color:var(--txt);
+      min-height:100vh;overflow-x:hidden;overflow-y:auto}
 
     /* ── screens ── */
     .screen{display:none;min-height:100vh;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -60,330 +56,354 @@
     #loading{position:fixed;inset:0;background:rgba(255,248,240,.93);
       display:none;flex-direction:column;align-items:center;justify-content:center;z-index:999}
     #loading.on{display:flex}
-    .dot{width:15px;height:15px;border-radius:50%;display:inline-block;margin:0 5px;
-      animation:db .6s ease infinite alternate}
+    .dot{width:14px;height:14px;border-radius:50%;display:inline-block;margin:0 4px;
+      animation:db .6s ease infinite alternate;background:var(--pri)}
     .dot:nth-child(2){animation-delay:.15s;background:var(--sec)}
     .dot:nth-child(3){animation-delay:.30s;background:var(--pur)}
-    @keyframes db{to{transform:translateY(-18px)}}
-    #loading-txt{font-family:'Baloo 2',cursive;font-size:19px;font-weight:700;
-      margin-top:18px;color:var(--pri)}
+    @keyframes db{to{transform:translateY(-16px)}}
+    #loading-txt{font-family:"Baloo 2",cursive;font-size:18px;font-weight:700;margin-top:16px;color:var(--pri)}
 
     /* ── toast ── */
-    #toast{position:fixed;bottom:86px;left:50%;transform:translateX(-50%) translateY(16px);
-      background:#2d2d2d;color:#fff;padding:11px 22px;border-radius:50px;
-      font-size:14px;font-weight:700;opacity:0;transition:all .3s;z-index:998;
-      white-space:nowrap;pointer-events:none}
+    #toast{position:fixed;bottom:82px;left:50%;transform:translateX(-50%) translateY(14px);
+      background:#2d2d2d;color:#fff;padding:10px 20px;border-radius:50px;
+      font-size:13px;font-weight:700;opacity:0;transition:all .3s;z-index:998;
+      white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center}
     #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
-    /* ══════════ SPLASH ══════════ */
-    #sc-splash{background:linear-gradient(135deg,#FF6B35,#FF8FAB 50%,#A78BFA);
-      align-items:center;justify-content:flex-start;
-      padding:40px 20px 50px;
-      overflow-y:auto;-webkit-overflow-scrolling:touch;gap:0}
-    .splash-logo{font-family:'Baloo 2',cursive;font-size:clamp(36px,9vw,60px);
-      font-weight:800;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.2);
-      text-align:center;margin-bottom:4px}
-    .splash-logo span{color:var(--acc)}
-    .splash-sub{color:rgba(255,255,255,.9);font-size:14px;font-weight:600;
-      text-align:center;margin-bottom:20px}
-    .prof-list{width:100%;max-width:480px;display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
-    .prof-card{background:#fff;border-radius:16px;padding:12px 16px;
-      display:flex;align-items:center;gap:12px;cursor:pointer;
-      box-shadow:0 6px 24px rgba(0,0,0,.13);
-      transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
-    .prof-card:hover{transform:translateY(-3px)}
-    .prof-av{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;
-      justify-content:center;font-size:24px;flex-shrink:0}
-    .prof-info{flex:1}
-    .prof-name{font-family:'Baloo 2',cursive;font-size:17px;font-weight:800}
-    .prof-meta{font-size:11px;color:var(--muted);font-weight:600;margin-top:1px}
-    .prof-code{font-size:10px;font-weight:800;letter-spacing:1px;
-      background:var(--bg);padding:3px 8px;border-radius:50px;color:var(--muted);flex-shrink:0}
-    .divider{display:flex;align-items:center;gap:10px;width:100%;max-width:480px;margin:6px 0}
-    .divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.35)}
-    .divider span{color:rgba(255,255,255,.8);font-size:11px;font-weight:700;white-space:nowrap}
-    .sp-btn{width:100%;max-width:480px;padding:13px;border-radius:14px;border:none;
-      font-family:'Baloo 2',cursive;font-size:17px;font-weight:800;cursor:pointer;
-      transition:transform .15s;margin-bottom:8px;
-      -webkit-tap-highlight-color:transparent;touch-action:manipulation}
-    .sp-btn:hover{transform:translateY(-2px)}
-    .sp-btn.pri{background:#fff;color:var(--pri);box-shadow:0 5px 20px rgba(0,0,0,.13)}
-    .sp-btn.sec{background:rgba(255,255,255,.18);color:#fff;border:2px solid rgba(255,255,255,.45)}
+    /* ── bottom nav ── */
+    .bnav{position:fixed;bottom:0;left:0;right:0;background:#fff;
+      box-shadow:0 -4px 20px rgba(0,0,0,.08);display:flex;justify-content:space-around;
+      padding:7px 0 max(env(safe-area-inset-bottom),7px);z-index:100}
+    .nb{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;
+      padding:4px 4px;border-radius:10px;font-size:10px;font-weight:700;color:var(--muted);
+      flex:1;min-width:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+    .nb.on{color:var(--pri);background:rgba(255,107,53,.08)}
+    .nb .ni{font-size:21px}
 
-    /* ══════════ CREATE PROFILE ══════════ */
-    #sc-create{background:var(--bg);align-items:center;padding:0 20px 40px;overflow-y:auto;-webkit-overflow-scrolling:touch}
-    .form-hdr{width:100%;background:linear-gradient(135deg,#FF6B35,#FF8FAB);
-      padding:38px 24px 30px;text-align:center;color:#fff;margin-bottom:26px}
-    .form-hdr h2{font-family:'Baloo 2',cursive;font-size:26px;font-weight:800}
-    .form-hdr p{opacity:.85;font-size:13px;margin-top:5px;font-weight:600}
-    .form-wrap{width:100%;max-width:460px}
-    .lbl{font-size:12px;font-weight:800;color:var(--muted);
-      text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:block}
-    .av-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:20px}
-    .av-opt{aspect-ratio:1;border-radius:14px;background:#fff;display:flex;
-      align-items:center;justify-content:center;font-size:28px;cursor:pointer;
-      box-shadow:var(--sh-sm);border:3px solid transparent;transition:all .2s}
-    .av-opt.sel{border-color:var(--pri);background:rgba(255,107,53,.07);transform:scale(1.1)}
-    .txt-inp{width:100%;padding:13px 17px;border-radius:13px;border:2px solid #eee;
-      font-family:'Nunito',sans-serif;font-size:16px;font-weight:700;background:#fff;
-      outline:none;transition:border-color .2s;margin-bottom:20px}
-    .txt-inp:focus{border-color:var(--pri)}
-    .age-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:22px}
-    .age-opt{border-radius:15px;padding:13px 10px;cursor:pointer;border:3px solid transparent;
-      background:#fff;box-shadow:var(--sh-sm);text-align:center;transition:all .2s}
-    .age-opt.sel{border-color:var(--pri);transform:scale(1.03)}
-    .age-opt .emo{font-size:28px;margin-bottom:5px;display:block}
-    .age-opt .lbl2{font-family:'Baloo 2',cursive;font-size:15px;font-weight:800}
-    .age-opt .rng{font-size:11px;color:var(--muted);font-weight:600}
-    .f-btn{width:100%;padding:16px;border-radius:14px;border:none;
-      font-family:'Baloo 2',cursive;font-size:19px;font-weight:800;cursor:pointer;
-      transition:transform .15s;margin-bottom:11px}
-    .f-btn:hover{transform:translateY(-2px)}
-    .f-btn.pri{background:linear-gradient(135deg,var(--pri),var(--pnk));color:#fff;
-      box-shadow:0 6px 20px rgba(255,107,53,.35)}
-    .f-btn.ghost{background:var(--bg);color:var(--muted)}
-
-    /* ══════════ JOIN ══════════ */
-    #sc-join{background:var(--bg);align-items:center;padding:0 20px 40px;overflow-y:auto;-webkit-overflow-scrolling:touch}
-    .join-hdr{width:100%;background:linear-gradient(135deg,#4ECDC4,#A78BFA);
-      padding:38px 24px 30px;text-align:center;color:#fff;margin-bottom:26px}
-    .join-hdr h2{font-family:'Baloo 2',cursive;font-size:26px;font-weight:800}
-    .join-hdr p{opacity:.85;font-size:13px;margin-top:5px;font-weight:600}
-    .code-row{display:flex;gap:8px;margin-bottom:16px}
-    .code-seg{flex:1;padding:15px 8px;border-radius:13px;border:2px solid #eee;
-      font-family:'Baloo 2',cursive;font-size:20px;font-weight:800;
-      text-align:center;outline:none;background:#fff;transition:border-color .2s;
-      text-transform:uppercase}
-    .code-seg:focus{border-color:var(--sec)}
-    .code-dash{display:flex;align-items:center;font-size:22px;font-weight:800;color:var(--muted)}
-    .code-hint{text-align:center;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:22px}
-    .code-hint strong{color:var(--pri)}
-
-    /* ══════════ TOPBAR + NAV ══════════ */
+    /* ── topbar ── */
     .topbar{background:#fff;box-shadow:var(--sh-sm);padding:10px 14px;
       display:flex;align-items:center;justify-content:space-between;
       position:sticky;top:0;z-index:100;flex-shrink:0}
     .tb-left{display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden}
-    .tb-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
-      justify-content:center;font-size:20px;cursor:pointer;flex-shrink:0}
-    .tb-name{font-family:'Baloo 2',cursive;font-size:17px;font-weight:800;
+    .tb-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;
+      justify-content:center;font-size:19px;cursor:pointer;flex-shrink:0}
+    .tb-name{font-family:"Baloo 2",cursive;font-size:16px;font-weight:800;
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .tb-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
-    .xp-pill{display:flex;align-items:center;gap:5px;background:var(--acc);
-      padding:5px 11px;border-radius:50px;font-weight:800;font-size:13px;color:#333;white-space:nowrap}
-    .age-tag{padding:5px 10px;border-radius:50px;font-size:11px;font-weight:800;color:#fff;white-space:nowrap}
-    .bnav{position:fixed;bottom:0;left:0;right:0;background:#fff;
-      box-shadow:0 -4px 20px rgba(0,0,0,.08);display:flex;justify-content:space-around;
-      padding:8px 0 max(env(safe-area-inset-bottom),8px);z-index:100}
-    .nb{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;
-      padding:5px 6px;border-radius:11px;font-size:10px;font-weight:700;color:var(--muted);
-      transition:background .2s,color .2s;flex:1;min-width:0;max-width:90px;
+    .tb-right{display:flex;align-items:center;gap:7px;flex-shrink:0}
+    .xp-pill{display:flex;align-items:center;gap:4px;background:var(--acc);
+      padding:5px 10px;border-radius:50px;font-weight:800;font-size:12px;color:#333;white-space:nowrap}
+    .age-tag{padding:5px 9px;border-radius:50px;font-size:10px;font-weight:800;color:#fff;white-space:nowrap}
+
+    /* ── back bar ── */
+    .bbar{padding:12px 16px;display:flex;align-items:center;gap:10px;
+      background:#fff;box-shadow:var(--sh-sm);flex-shrink:0;position:sticky;top:0;z-index:50}
+    .bk{width:36px;height:36px;border-radius:50%;background:var(--bg);
+      display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;
+      flex-shrink:0;-webkit-tap-highlight-color:transparent}
+    .bbar-t{font-family:"Baloo 2",cursive;font-size:19px;font-weight:800}
+
+    /* ── sec title ── */
+    .sec-t{font-family:"Baloo 2",cursive;font-size:18px;font-weight:800;
+      margin-bottom:12px;margin-top:24px;display:flex;align-items:center;gap:7px}
+
+    /* ── forms ── */
+    .lbl{font-size:11px;font-weight:800;color:var(--muted);
+      text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;display:block}
+    .txt-inp{width:100%;padding:12px 16px;border-radius:12px;border:2px solid #eee;
+      font-family:"Nunito",sans-serif;font-size:15px;font-weight:700;background:#fff;
+      outline:none;transition:border-color .2s;margin-bottom:18px;-webkit-appearance:none}
+    .txt-inp:focus{border-color:var(--pri)}
+    .f-btn{width:100%;padding:15px;border-radius:13px;border:none;
+      font-family:"Baloo 2",cursive;font-size:18px;font-weight:800;cursor:pointer;
+      transition:transform .15s;margin-bottom:10px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+    .f-btn:hover{transform:translateY(-2px)}
+    .f-btn.pri{background:linear-gradient(135deg,var(--pri),var(--pnk));color:#fff;
+      box-shadow:0 5px 18px rgba(255,107,53,.35)}
+    .f-btn.ghost{background:var(--bg);color:var(--muted)}
+    .f-btn.teal{background:linear-gradient(135deg,var(--sec),#36a5a0);color:#fff;
+      box-shadow:0 5px 18px rgba(78,205,196,.35)}
+
+    /* ── cards ── */
+    .card{background:#fff;border-radius:18px;padding:18px 20px;
+      box-shadow:var(--sh-sm);margin-bottom:14px}
+
+    /* ══════════ SPLASH ══════════ */
+    #sc-splash{background:linear-gradient(135deg,#FF6B35,#FF8FAB 50%,#A78BFA);
+      align-items:center;justify-content:flex-start;padding:36px 20px 50px;
+      overflow-y:auto;-webkit-overflow-scrolling:touch}
+    .splash-logo{font-family:"Baloo 2",cursive;font-size:clamp(34px,9vw,58px);
+      font-weight:800;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.2);
+      text-align:center;margin-bottom:4px}
+    .splash-logo span{color:var(--acc)}
+    .splash-sub{color:rgba(255,255,255,.9);font-size:13px;font-weight:600;
+      text-align:center;margin-bottom:20px}
+    .prof-list{width:100%;max-width:480px;display:flex;flex-direction:column;gap:9px;margin-bottom:12px}
+    .prof-card{background:#fff;border-radius:15px;padding:11px 15px;
+      display:flex;align-items:center;gap:11px;cursor:pointer;
+      box-shadow:0 5px 20px rgba(0,0,0,.12);transition:transform .2s}
+    .prof-card:active{transform:scale(.98)}
+    .prof-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;
+      justify-content:center;font-size:22px;flex-shrink:0}
+    .prof-name{font-family:"Baloo 2",cursive;font-size:16px;font-weight:800}
+    .prof-meta{font-size:11px;color:var(--muted);font-weight:600;margin-top:1px}
+    .prof-code{font-size:10px;font-weight:800;letter-spacing:.5px;
+      background:var(--bg);padding:3px 7px;border-radius:50px;color:var(--muted);flex-shrink:0}
+    .divider{display:flex;align-items:center;gap:8px;width:100%;max-width:480px;margin:5px 0 10px}
+    .divider::before,.divider::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.35)}
+    .divider span{color:rgba(255,255,255,.8);font-size:11px;font-weight:700;white-space:nowrap}
+    .sp-btn{width:100%;max-width:480px;padding:13px;border-radius:13px;border:none;
+      font-family:"Baloo 2",cursive;font-size:16px;font-weight:800;cursor:pointer;
+      transition:transform .15s;margin-bottom:8px;
       -webkit-tap-highlight-color:transparent;touch-action:manipulation}
-    .nb.on{color:var(--pri);background:rgba(255,107,53,.08)}
-    .nb .ni{font-size:22px}
+    .sp-btn.pri{background:#fff;color:var(--pri);box-shadow:0 5px 18px rgba(0,0,0,.12)}
+    .sp-btn.sec{background:rgba(255,255,255,.18);color:#fff;border:2px solid rgba(255,255,255,.4)}
+
+    /* ══════════ CREATE / EDIT PROFILE ══════════ */
+    #sc-create,#sc-edit{background:var(--bg);align-items:center}
+    .form-hdr{width:100%;padding:34px 22px 28px;text-align:center;color:#fff;margin-bottom:22px;flex-shrink:0}
+    .form-hdr h2{font-family:"Baloo 2",cursive;font-size:24px;font-weight:800}
+    .form-hdr p{opacity:.85;font-size:12px;margin-top:4px;font-weight:600}
+    .form-wrap{width:100%;max-width:460px;padding:0 4px 40px}
+    .av-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px}
+    .av-opt{aspect-ratio:1;border-radius:12px;background:#fff;display:flex;align-items:center;
+      justify-content:center;font-size:26px;cursor:pointer;box-shadow:var(--sh-sm);
+      border:3px solid transparent;transition:all .18s;-webkit-tap-highlight-color:transparent}
+    .av-opt.sel{border-color:var(--pri);background:rgba(255,107,53,.07);transform:scale(1.08)}
+    .age-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+    .age-opt{border-radius:14px;padding:12px 9px;cursor:pointer;border:3px solid transparent;
+      background:#fff;box-shadow:var(--sh-sm);text-align:center;transition:all .18s;
+      -webkit-tap-highlight-color:transparent}
+    .age-opt.sel{border-color:var(--pri);transform:scale(1.02)}
+    .age-opt .emo{font-size:26px;margin-bottom:4px;display:block}
+    .age-opt .lbl2{font-family:"Baloo 2",cursive;font-size:14px;font-weight:800}
+    .age-opt .rng{font-size:10px;color:var(--muted);font-weight:600}
+    .age-suggestion{background:linear-gradient(135deg,var(--sec),#36a5a0);
+      border-radius:12px;padding:10px 14px;color:#fff;font-size:13px;font-weight:700;
+      margin-bottom:14px;display:none;align-items:center;gap:8px}
+
+    /* ══════════ JOIN ══════════ */
+    #sc-join{background:var(--bg);align-items:center}
+    .join-hdr{width:100%;background:linear-gradient(135deg,#4ECDC4,#A78BFA);
+      padding:34px 22px 28px;text-align:center;color:#fff;margin-bottom:22px}
+    .join-hdr h2{font-family:"Baloo 2",cursive;font-size:24px;font-weight:800}
+    .join-hdr p{opacity:.85;font-size:12px;margin-top:4px;font-weight:600}
+    .code-hint{text-align:center;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:20px}
+    .code-hint strong{color:var(--pri)}
 
     /* ══════════ HOME ══════════ */
     #sc-home{background:var(--bg)}
-    .hc{padding:18px 18px 96px;max-width:880px;margin:0 auto;width:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
-    .greet{font-family:'Baloo 2',cursive;font-size:clamp(21px,5vw,29px);font-weight:800;margin-bottom:3px}
-    .greet-s{color:var(--muted);font-size:13px;font-weight:600;margin-bottom:22px}
-    .streak-b{background:linear-gradient(135deg,#FF6B35,#FF8FAB);border-radius:19px;
-      padding:15px 19px;color:#fff;display:flex;align-items:center;justify-content:space-between;
-      margin-bottom:22px;box-shadow:0 6px 22px rgba(255,107,53,.3)}
-    .streak-l{display:flex;align-items:center;gap:11px}
-    .sec-t{font-family:'Baloo 2',cursive;font-size:19px;font-weight:800;
-      margin-bottom:13px;margin-top:26px;display:flex;align-items:center;gap:7px}
-    .sub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:13px}
-    .sub-card{border-radius:19px;padding:19px 13px 15px;cursor:pointer;text-align:center;
-      box-shadow:var(--sh-sm);transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s}
-    .sub-card:hover{transform:translateY(-5px);box-shadow:var(--sh)}
-    .sub-card .si{font-size:38px;margin-bottom:7px;display:block}
-    .sub-card .sn{font-family:'Baloo 2',cursive;font-size:15px;font-weight:800;color:#fff}
+    .hc{padding:16px 16px 90px;max-width:880px;margin:0 auto;width:100%}
+    .greet{font-family:"Baloo 2",cursive;font-size:clamp(19px,5vw,27px);font-weight:800;margin-bottom:2px}
+    .greet-s{color:var(--muted);font-size:12px;font-weight:600;margin-bottom:18px}
+    .streak-b{background:linear-gradient(135deg,#FF6B35,#FF8FAB);border-radius:17px;
+      padding:13px 17px;color:#fff;display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:10px;box-shadow:0 5px 18px rgba(255,107,53,.28)}
+
+    /* Daily challenge banner */
+    .daily-b{background:linear-gradient(135deg,#A78BFA,#6BCB77);border-radius:17px;
+      padding:13px 17px;color:#fff;display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:18px;box-shadow:0 5px 18px rgba(167,139,250,.3);cursor:pointer;
+      -webkit-tap-highlight-color:transparent}
+    .daily-done{opacity:.6;cursor:default}
+    .daily-btn{background:rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.5);
+      border-radius:50px;padding:6px 14px;font-family:"Baloo 2",cursive;
+      font-size:13px;font-weight:800;color:#fff;white-space:nowrap}
+
+    .sub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:12px}
+    .sub-card{border-radius:17px;padding:17px 12px 13px;cursor:pointer;text-align:center;
+      box-shadow:var(--sh-sm);transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s;
+      -webkit-tap-highlight-color:transparent}
+    .sub-card:active{transform:scale(.97)}
+    .sub-card .si{font-size:36px;margin-bottom:7px;display:block}
+    .sub-card .sn{font-family:"Baloo 2",cursive;font-size:14px;font-weight:800;color:#fff}
     .sub-card .sp{margin-top:7px;height:5px;background:rgba(255,255,255,.3);border-radius:99px;overflow:hidden}
-    .sub-card .spb{height:100%;background:rgba(255,255,255,.85);border-radius:99px}
+    .sub-card .spb{height:100%;background:rgba(255,255,255,.85);border-radius:99px;transition:width .6s}
+
+    /* Repeat badge */
+    .repeat-badge{display:inline-block;background:#ff4d4d;color:#fff;
+      font-size:9px;font-weight:800;border-radius:50px;padding:1px 6px;
+      margin-left:5px;vertical-align:middle}
 
     /* ══════════ LESSONS ══════════ */
     #sc-lessons{background:var(--bg)}
-    .bbar{padding:13px 18px;display:flex;align-items:center;gap:11px;
-      background:#fff;box-shadow:var(--sh-sm)}
-    .bk{width:36px;height:36px;border-radius:50%;background:var(--bg);
-      display:flex;align-items:center;justify-content:center;cursor:pointer;
-      font-size:17px;transition:background .2s}
-    .bk:hover{background:#eee}
-    .bbar-t{font-family:'Baloo 2',cursive;font-size:20px;font-weight:800}
-    .lc{padding:18px 18px 80px;max-width:680px;margin:0 auto;width:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
-    .les-card{background:#fff;border-radius:15px;padding:15px 17px;margin-bottom:11px;
-      display:flex;align-items:center;gap:13px;cursor:pointer;box-shadow:var(--sh-sm);
-      transition:transform .2s,box-shadow .2s}
-    .les-card:hover{transform:translateX(5px);box-shadow:var(--sh)}
-    .les-num{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;
-      justify-content:center;font-family:'Baloo 2',cursive;font-size:16px;font-weight:800;
+    .lc{padding:16px 16px 80px;max-width:680px;margin:0 auto;width:100%}
+    .les-card{background:#fff;border-radius:14px;padding:13px 16px;margin-bottom:10px;
+      display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:var(--sh-sm);
+      transition:transform .18s,box-shadow .18s;-webkit-tap-highlight-color:transparent}
+    .les-card:active{transform:scale(.98)}
+    .les-num{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;
+      justify-content:center;font-family:"Baloo 2",cursive;font-size:15px;font-weight:800;
       color:#fff;flex-shrink:0}
     .les-info{flex:1}
-    .les-t{font-weight:800;font-size:15px}
-    .les-m{font-size:12px;color:var(--muted);margin-top:2px}
-    .les-xp{font-size:12px;font-weight:700;color:#333;background:var(--acc);padding:4px 10px;border-radius:50px}
-    .les-done{color:var(--grn);font-size:20px}
+    .les-t{font-weight:800;font-size:14px}
+    .les-m{font-size:11px;color:var(--muted);margin-top:2px}
+    .les-xp{font-size:11px;font-weight:700;color:#333;background:var(--acc);padding:3px 9px;border-radius:50px}
+    .les-done{color:var(--grn);font-size:18px}
 
     /* ══════════ QUIZ ══════════ */
     #sc-quiz{background:var(--bg)}
-    .qt{background:#fff;padding:11px 17px;display:flex;align-items:center;
+    .qt{background:#fff;padding:10px 16px;display:flex;align-items:center;
       justify-content:space-between;box-shadow:var(--sh-sm);flex-shrink:0;position:sticky;top:0;z-index:10}
-    .qpb{flex:1;margin:0 13px;height:10px;background:#eee;border-radius:99px;overflow:hidden}
+    .qpb{flex:1;margin:0 12px;height:9px;background:#eee;border-radius:99px;overflow:hidden}
     .qpf{height:100%;background:linear-gradient(90deg,var(--pri),var(--pnk));
       border-radius:99px;transition:width .4s}
-    .qc{font-weight:700;font-size:13px;color:var(--muted)}
-    .quiz-con{flex:1;display:flex;flex-direction:column;padding:18px 18px 40px;
+    .qc{font-weight:700;font-size:12px;color:var(--muted);white-space:nowrap}
+    .quiz-con{flex:1;display:flex;flex-direction:column;padding:16px 16px 32px;
       max-width:680px;margin:0 auto;width:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
-    .q-tag{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;
-      border-radius:50px;font-size:12px;font-weight:700;color:#fff;margin-bottom:14px;width:fit-content}
-    .q-txt{font-family:'Baloo 2',cursive;font-size:clamp(17px,4.5vw,25px);
-      font-weight:800;line-height:1.35;margin-bottom:22px}
-    .q-illus{font-size:68px;text-align:center;margin-bottom:18px;display:block;
+    .q-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;
+      border-radius:50px;font-size:11px;font-weight:700;color:#fff;margin-bottom:13px;width:fit-content}
+    .q-txt{font-family:"Baloo 2",cursive;font-size:clamp(16px,4vw,24px);
+      font-weight:800;line-height:1.35;margin-bottom:20px}
+    .q-illus{font-size:64px;text-align:center;margin-bottom:16px;display:block;
       animation:fl 3s ease-in-out infinite}
-    @keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-    .ag{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:18px}
+    @keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+    .ag{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
     .ag.sc{grid-template-columns:1fr}
-    .ab{background:#fff;border:3px solid transparent;border-radius:13px;padding:13px 15px;
-      cursor:pointer;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;
-      text-align:left;box-shadow:var(--sh-sm);transition:all .2s;
-      display:flex;align-items:center;gap:9px}
-    .al{width:28px;height:28px;border-radius:50%;background:var(--bg);
-      display:flex;align-items:center;justify-content:center;
-      font-weight:800;font-size:12px;flex-shrink:0}
-    .ab:hover:not(:disabled){border-color:var(--pri);transform:scale(1.02)}
-    .ab.sel{border-color:var(--pri);background:rgba(255,107,53,.06)}
+    .ab{background:#fff;border:3px solid transparent;border-radius:12px;padding:12px 14px;
+      cursor:pointer;font-family:"Nunito",sans-serif;font-size:14px;font-weight:700;
+      text-align:left;box-shadow:var(--sh-sm);transition:all .18s;
+      display:flex;align-items:center;gap:8px;-webkit-tap-highlight-color:transparent}
+    .al{width:26px;height:26px;border-radius:50%;background:var(--bg);
+      display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0}
+    .ab.sel{border-color:var(--pri);background:rgba(255,107,53,.05)}
     .ab.ok{border-color:var(--grn);background:rgba(107,203,119,.1)}
-    .ab.ng{border-color:#ff4d4d;background:rgba(255,77,77,.08)}
+    .ab.ng{border-color:#ff4d4d;background:rgba(255,77,77,.07)}
     .ab:disabled{cursor:default}
-    .fbp{border-radius:13px;padding:15px 17px;margin-top:5px;display:none;animation:su .3s ease}
-    @keyframes su{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
-    .fbp.ok{background:rgba(107,203,119,.15);border:2px solid var(--grn)}
-    .fbp.ng{background:rgba(255,77,77,.08);border:2px solid #ff4d4d}
-    .fbt{font-family:'Baloo 2',cursive;font-size:17px;font-weight:800;margin-bottom:4px}
+    .fbp{border-radius:12px;padding:13px 16px;margin-top:5px;display:none;animation:su .28s ease}
+    @keyframes su{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .fbp.ok{background:rgba(107,203,119,.14);border:2px solid var(--grn)}
+    .fbp.ng{background:rgba(255,77,77,.07);border:2px solid #ff4d4d}
+    .fbt{font-family:"Baloo 2",cursive;font-size:16px;font-weight:800;margin-bottom:3px}
     .fbp.ok .fbt{color:#3d9c4a}.fbp.ng .fbt{color:#c0392b}
-    .fbtx{font-size:14px;line-height:1.55}
-    .qa{width:100%;padding:15px;border-radius:13px;border:none;
-      font-family:'Baloo 2',cursive;font-size:18px;font-weight:800;
-      cursor:pointer;transition:transform .15s,box-shadow .15s;margin-top:9px}
-    .qa:hover{transform:translateY(-2px)}
+    .fbtx{font-size:13px;line-height:1.55}
+    .qa{width:100%;padding:14px;border-radius:12px;border:none;
+      font-family:"Baloo 2",cursive;font-size:17px;font-weight:800;
+      cursor:pointer;transition:transform .13s;margin-top:8px;-webkit-tap-highlight-color:transparent}
     .qa.chk{background:linear-gradient(135deg,var(--sec),#36a5a0);color:#fff;
-      box-shadow:0 6px 20px rgba(78,205,196,.35)}
-    .qa.chk:disabled{opacity:.5;cursor:default;transform:none}
+      box-shadow:0 5px 18px rgba(78,205,196,.32)}
+    .qa.chk:disabled{opacity:.45;cursor:default;transform:none}
     .qa.nxt{background:linear-gradient(135deg,var(--pri),var(--pnk));color:#fff;
-      box-shadow:0 6px 20px rgba(255,107,53,.35);display:none}
+      box-shadow:0 5px 18px rgba(255,107,53,.32);display:none}
+
+    /* difficulty badge */
+    .diff-badge{display:inline-block;padding:3px 10px;border-radius:50px;
+      font-size:10px;font-weight:800;color:#fff;margin-bottom:12px}
 
     /* ══════════ RESULT ══════════ */
     #sc-result{background:linear-gradient(135deg,#A78BFA,#FF8FAB 50%,#FF6B35);
-      align-items:center;justify-content:flex-start;padding:36px 18px;overflow-y:auto;-webkit-overflow-scrolling:touch}
-    .rc{background:#fff;border-radius:26px;padding:34px 26px;text-align:center;
-      max-width:440px;width:100%;box-shadow:0 20px 80px rgba(0,0,0,.2);margin:auto}
-    .rt{font-size:72px;margin-bottom:13px;animation:bo .8s ease}
-    @keyframes bo{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.2) rotate(5deg)}100%{transform:scale(1) rotate(0)}}
-    .rti{font-family:'Baloo 2',cursive;font-size:28px;font-weight:800;margin-bottom:5px}
-    .rts{color:var(--muted);font-size:14px;margin-bottom:22px}
-    .rs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:18px}
-    .sb{background:var(--bg);border-radius:13px;padding:13px 7px}
-    .sn{font-family:'Baloo 2',cursive;font-size:24px;font-weight:800;color:var(--pri)}
-    .sl{font-size:11px;font-weight:700;color:var(--muted);margin-top:2px}
-    .rxp{background:linear-gradient(135deg,var(--acc),#ffd700);border-radius:13px;
-      padding:13px;font-family:'Baloo 2',cursive;font-size:19px;font-weight:800;
-      color:#333;margin-bottom:18px}
-    .rb{width:100%;padding:15px;border-radius:13px;border:none;
-      font-family:'Baloo 2',cursive;font-size:17px;font-weight:800;
-      cursor:pointer;transition:transform .15s;margin-bottom:9px}
-    .rb:hover{transform:translateY(-2px)}
+      align-items:center;justify-content:flex-start;padding:30px 16px;
+      overflow-y:auto;-webkit-overflow-scrolling:touch}
+    .rc{background:#fff;border-radius:24px;padding:28px 22px;text-align:center;
+      max-width:440px;width:100%;box-shadow:0 16px 70px rgba(0,0,0,.18);margin:auto}
+    .rt{font-size:68px;margin-bottom:11px;animation:bo .75s ease}
+    @keyframes bo{0%{transform:scale(0) rotate(-18deg)}60%{transform:scale(1.18) rotate(4deg)}100%{transform:scale(1) rotate(0)}}
+    .rti{font-family:"Baloo 2",cursive;font-size:26px;font-weight:800;margin-bottom:4px}
+    .rts{color:var(--muted);font-size:13px;margin-bottom:18px}
+    .rs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+    .sb{background:var(--bg);border-radius:12px;padding:11px 6px}
+    .sn{font-family:"Baloo 2",cursive;font-size:22px;font-weight:800;color:var(--pri)}
+    .sl{font-size:10px;font-weight:700;color:var(--muted);margin-top:1px}
+    .rxp{background:linear-gradient(135deg,var(--acc),#ffd700);border-radius:12px;
+      padding:12px;font-family:"Baloo 2",cursive;font-size:17px;font-weight:800;
+      color:#333;margin-bottom:16px}
+    .rb{width:100%;padding:13px;border-radius:12px;border:none;
+      font-family:"Baloo 2",cursive;font-size:16px;font-weight:800;
+      cursor:pointer;transition:transform .13s;margin-bottom:8px;-webkit-tap-highlight-color:transparent}
     .rb.pri{background:linear-gradient(135deg,var(--pri),var(--pnk));color:#fff;
-      box-shadow:0 6px 20px rgba(255,107,53,.35)}
+      box-shadow:0 5px 18px rgba(255,107,53,.32)}
     .rb.sec{background:var(--bg);color:var(--txt)}
 
     /* ══════════ PROFILE VIEW ══════════ */
     #sc-pv{background:var(--bg)}
     .pv-hdr{background:linear-gradient(135deg,var(--pur),var(--pnk));
-      padding:34px 22px 48px;text-align:center;color:#fff}
-    .pv-av{width:86px;height:86px;border-radius:50%;background:rgba(255,255,255,.25);
-      display:flex;align-items:center;justify-content:center;font-size:44px;
-      margin:0 auto 10px;border:4px solid rgba(255,255,255,.5)}
-    .pv-nm{font-family:'Baloo 2',cursive;font-size:23px;font-weight:800}
-    .pv-ag{opacity:.85;font-size:13px;font-weight:600;margin-top:3px}
-    .pv-cd{display:inline-block;margin-top:10px;background:rgba(255,255,255,.2);
-      border:1px solid rgba(255,255,255,.4);padding:6px 15px;border-radius:50px;
-      font-family:'Baloo 2',cursive;font-size:13px;font-weight:800;
-      letter-spacing:1px;cursor:pointer}
-    .pv-con{padding:18px 18px 80px;max-width:580px;margin:-26px auto 0;position:relative;overflow-y:auto;-webkit-overflow-scrolling:touch}
-    .pv-sc{background:#fff;border-radius:19px;padding:18px;box-shadow:var(--sh-sm);margin-bottom:18px}
-    .pv-sg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;text-align:center}
-    .pvn{font-family:'Baloo 2',cursive;font-size:25px;font-weight:800}
-    .pvl{font-size:11px;font-weight:700;color:var(--muted);margin-top:2px}
-    .ach-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:11px}
-    .ach{background:#fff;border-radius:15px;padding:15px 9px;text-align:center;box-shadow:var(--sh-sm)}
-    .ach .ai{font-size:30px;margin-bottom:5px;display:block}
-    .ach .an{font-size:11px;font-weight:700;color:var(--muted)}
-    .ach.lk{opacity:.3;filter:grayscale(1)}
-    .sw-btn{width:100%;padding:13px;border-radius:13px;border:2px solid #eee;
-      background:#fff;font-family:'Baloo 2',cursive;font-size:15px;font-weight:700;
-      cursor:pointer;color:var(--muted);margin-top:14px;transition:border-color .2s,color .2s}
-    .sw-btn:hover{border-color:var(--pri);color:var(--pri)}
+      padding:30px 20px 44px;text-align:center;color:#fff;flex-shrink:0}
+    .pv-av{width:82px;height:82px;border-radius:50%;background:rgba(255,255,255,.22);
+      display:flex;align-items:center;justify-content:center;font-size:42px;
+      margin:0 auto 9px;border:4px solid rgba(255,255,255,.45)}
+    .pv-nm{font-family:"Baloo 2",cursive;font-size:22px;font-weight:800}
+    .pv-ag{opacity:.85;font-size:12px;font-weight:600;margin-top:3px}
+    .pv-cd{display:inline-block;margin-top:9px;background:rgba(255,255,255,.18);
+      border:1px solid rgba(255,255,255,.38);padding:5px 14px;border-radius:50px;
+      font-family:"Baloo 2",cursive;font-size:12px;font-weight:800;letter-spacing:1px;cursor:pointer}
+    .pv-con{padding:16px 16px 90px;max-width:580px;margin:-24px auto 0;position:relative}
+    .pv-sc{background:#fff;border-radius:18px;padding:16px;box-shadow:var(--sh-sm);margin-bottom:14px}
+    .pv-sg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center}
+    .pvn{font-family:"Baloo 2",cursive;font-size:23px;font-weight:800}
+    .pvl{font-size:10px;font-weight:700;color:var(--muted);margin-top:1px}
+    .ach-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
+    .ach{background:#fff;border-radius:14px;padding:13px 8px;text-align:center;box-shadow:var(--sh-sm)}
+    .ach .ai{font-size:28px;margin-bottom:5px;display:block}
+    .ach .an{font-size:10px;font-weight:700;color:var(--muted)}
+    .ach.lk{opacity:.28;filter:grayscale(1)}
+    .sw-btn{width:100%;padding:12px;border-radius:12px;border:2px solid #eee;
+      background:#fff;font-family:"Baloo 2",cursive;font-size:14px;font-weight:700;
+      cursor:pointer;color:var(--muted);margin-top:10px;display:block;
+      transition:border-color .2s,color .2s;-webkit-tap-highlight-color:transparent;text-align:center}
+    .sw-btn:active{border-color:var(--pri);color:var(--pri)}
 
-    /* ══════════ SETTINGS MODAL ══════════ */
-    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;
-      display:none;align-items:flex-end;justify-content:center}
-    .modal-bg.on{display:flex}
-    .modal{background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:520px;
-      padding:24px 22px max(env(safe-area-inset-bottom),32px);
-      box-shadow:0 -8px 40px rgba(0,0,0,.2);
-      animation:slideUp .3s ease;
-      max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-    .modal-title{font-family:'Baloo 2',cursive;font-size:22px;font-weight:800;
-      margin-bottom:6px;display:flex;align-items:center;gap:8px}
-    .modal-sub{font-size:13px;color:var(--muted);font-weight:600;margin-bottom:20px;line-height:1.5}
-    .key-wrap{position:relative;margin-bottom:14px}
-    .key-input{width:100%;padding:13px 50px 13px 17px;border-radius:13px;
-      border:2px solid #eee;font-size:14px;
-      font-weight:600;outline:none;transition:border-color .2s;
-      font-family:monospace;letter-spacing:.5px}
-    .key-input:focus{border-color:var(--pri)}
-    .key-eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);
-      font-size:18px;cursor:pointer;user-select:none;-webkit-user-select:none}
-    .key-status{display:flex;align-items:center;gap:7px;font-size:13px;
-      font-weight:700;margin-bottom:18px}
-    .key-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-    .key-dot.ok{background:var(--grn)}
-    .key-dot.ng{background:#ff4d4d}
-    .key-dot.no{background:#ccc}
-    .modal-save{width:100%;padding:14px;border-radius:13px;border:none;
-      background:linear-gradient(135deg,var(--pri),var(--pnk));
-      color:#fff;font-family:'Baloo 2',cursive;font-size:18px;font-weight:800;
-      cursor:pointer;transition:transform .15s;margin-bottom:10px}
-    .modal-save:hover{transform:translateY(-2px)}
-    .modal-save:active{transform:scale(.97)}
-    .modal-close{width:100%;padding:12px;border-radius:13px;border:2px solid #eee;
-      background:#fff;font-family:'Baloo 2',cursive;font-size:16px;font-weight:700;
-      cursor:pointer;color:var(--muted);margin-bottom:8px;display:block}
-    .modal-close:hover{border-color:var(--muted)}
+    /* Progress chart */
+    .chart-wrap{background:#fff;border-radius:18px;padding:16px;box-shadow:var(--sh-sm);margin-bottom:14px}
+    .chart-bars{display:flex;align-items:flex-end;gap:6px;height:80px;margin-top:10px}
+    .chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+    .chart-bar{width:100%;border-radius:5px 5px 0 0;background:linear-gradient(180deg,var(--pri),var(--pnk));
+      transition:height .5s ease;min-height:3px}
+    .chart-lbl{font-size:9px;font-weight:700;color:var(--muted)}
+    .chart-val{font-size:9px;font-weight:800;color:var(--pri)}
+
+    /* ══════════ EXPLORE / CHAT ══════════ */
     #sc-explore{background:var(--bg)}
-    #chat-msgs{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:9px;padding:14px 15px 7px}
-    .chat-bar{display:flex;gap:9px;padding:11px 15px;background:#fff;box-shadow:0 -2px 12px rgba(0,0,0,.06);flex-shrink:0}
-    .chat-in{flex:1;padding:11px 15px;border-radius:13px;border:2px solid #eee;
-      font-family:'Nunito',sans-serif;font-size:14px;font-weight:600;outline:none;
-      transition:border-color .2s}
+    #chat-msgs{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+      display:flex;flex-direction:column;gap:8px;padding:13px 13px 10px}
+    .chat-bar{display:flex;gap:8px;padding:9px 13px;background:#fff;
+      box-shadow:0 -2px 12px rgba(0,0,0,.06);flex-shrink:0;
+      position:sticky;bottom:calc(env(safe-area-inset-bottom) + 56px);z-index:50}
+    .chat-in{flex:1;padding:10px 14px;border-radius:12px;border:2px solid #eee;
+      font-family:"Nunito",sans-serif;font-size:14px;font-weight:600;outline:none;
+      transition:border-color .2s;-webkit-appearance:none}
     .chat-in:focus{border-color:var(--sec)}
-    .chat-snd{padding:11px 17px;border-radius:13px;border:none;
+    .chat-snd{padding:10px 16px;border-radius:12px;border:none;
       background:linear-gradient(135deg,var(--pri),var(--pnk));
-      color:#fff;font-size:17px;cursor:pointer;transition:transform .15s}
-    .chat-snd:hover{transform:scale(1.05)}
+      color:#fff;font-size:16px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+
+    /* ══════════ PARENTAL ══════════ */
+    #sc-parent{background:var(--bg)}
+    .pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:280px;margin:0 auto 16px}
+    .pin-btn{padding:16px;border-radius:14px;border:none;background:#fff;
+      font-family:"Baloo 2",cursive;font-size:22px;font-weight:800;
+      cursor:pointer;box-shadow:var(--sh-sm);transition:transform .13s,background .15s;
+      -webkit-tap-highlight-color:transparent}
+    .pin-btn:active{transform:scale(.93);background:var(--acc)}
+    .pin-display{text-align:center;font-size:28px;letter-spacing:8px;margin:0 auto 20px;
+      font-family:"Baloo 2",cursive;font-weight:800;color:var(--pri);min-height:40px}
+    .child-stat-card{background:#fff;border-radius:14px;padding:13px 15px;
+      margin-bottom:10px;display:flex;align-items:center;gap:12px;box-shadow:var(--sh-sm)}
+
+    /* ══════════ SETTINGS ══════════ */
+    #sc-settings{background:var(--bg)}
+    .sett-con{padding:16px 16px 90px;max-width:520px;margin:0 auto;width:100%}
+
+    /* ══════════ AVATAR SHOP ══════════ */
+    .shop-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+    .shop-item{background:#fff;border-radius:14px;padding:12px 6px;text-align:center;
+      box-shadow:var(--sh-sm);cursor:pointer;border:3px solid transparent;
+      transition:all .18s;-webkit-tap-highlight-color:transparent}
+    .shop-item.owned{border-color:var(--grn)}
+    .shop-item.locked{opacity:.5}
+    .shop-item .si-emoji{font-size:30px;display:block;margin-bottom:4px}
+    .shop-item .si-cost{font-size:10px;font-weight:800;color:var(--muted)}
+    .shop-item.owned .si-cost{color:var(--grn)}
 
     /* confetti */
-    .cf{position:fixed;width:10px;height:10px;top:-18px;
+    .cf{position:fixed;width:10px;height:10px;top:-16px;
       animation:cff linear forwards;pointer-events:none;z-index:9999;border-radius:2px}
     @keyframes cff{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
 
-    @media(max-width:460px){.ag{grid-template-columns:1fr}.age-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:400px){.ag{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
 
-<div id="loading"><div><span class="dot" style="background:var(--pri)"></span><span class="dot"></span><span class="dot"></span></div><div id="loading-txt">Lädt…</div></div>
+<div id="loading"><div><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><div id="loading-txt">Lädt…</div></div>
 <div id="toast"></div>
 
 <!-- ══ SPLASH ══ -->
@@ -392,37 +412,70 @@
   <div class="splash-sub">Spielend lernen – für jedes Kind!</div>
   <div class="prof-list" id="prof-list"></div>
   <div class="divider" id="divider" style="display:none"><span>oder neu starten</span></div>
-  <button class="sp-btn pri" onclick="showScreen('sc-create');setupCreate()">✨ Neues Profil anlegen</button>
+  <button class="sp-btn pri" onclick="showScreen('sc-create');setupCreate(false)">✨ Neues Profil anlegen</button>
   <button class="sp-btn sec" onclick="showScreen('sc-join')">🔑 Mit Code einloggen</button>
-  <button class="sp-btn sec" onclick="navTo('settings')" style="margin-top:6px">⚙️ Einstellungen</button>
+  <button class="sp-btn sec" onclick="navTo('settings')" style="margin-top:4px">⚙️ Einstellungen</button>
 </div>
 
-<!-- ══ CREATE ══ -->
+<!-- ══ CREATE PROFILE ══ -->
 <div class="screen" id="sc-create">
-  <div class="form-hdr"><h2>Neues Profil anlegen 🎉</h2><p>Avatar · Name · Altersgruppe wählen</p></div>
+  <div class="form-hdr" style="background:linear-gradient(135deg,#FF6B35,#FF8FAB)">
+    <h2 id="create-hdr-title">Neues Profil anlegen 🎉</h2>
+    <p>Avatar · Name · Geburtsdatum · Altersgruppe</p>
+  </div>
   <div class="form-wrap">
     <label class="lbl">Avatar wählen</label>
     <div class="av-grid" id="av-grid"></div>
     <label class="lbl">Dein Name</label>
     <input class="txt-inp" id="cr-name" type="text" placeholder="z.B. Lena oder Max" maxlength="20">
+    <label class="lbl">Geburtsdatum</label>
+    <input class="txt-inp" id="cr-bday" type="date" onchange="suggestAge()" style="color:#2d2d2d">
+    <div class="age-suggestion" id="age-suggestion">
+      <span style="font-size:20px" id="age-sug-emoji">🐣</span>
+      <span id="age-sug-txt">Empfehlung: Mini (3–5 J.)</span>
+    </div>
     <label class="lbl">Altersgruppe</label>
     <div class="age-grid" id="age-grid"></div>
-    <button class="f-btn pri" onclick="createProfile()">Profil erstellen 🚀</button>
+    <button class="f-btn pri" id="cr-submit-btn" onclick="createProfile()">Profil erstellen 🚀</button>
     <button class="f-btn ghost" onclick="showScreen('sc-splash')">Zurück</button>
+  </div>
+</div>
+
+<!-- ══ EDIT PROFILE ══ -->
+<div class="screen" id="sc-edit">
+  <div class="bbar">
+    <div class="bk" onclick="showScreen('sc-pv')">←</div>
+    <div class="bbar-t">Profil bearbeiten ✏️</div>
+  </div>
+  <div class="form-wrap" style="padding:20px 16px 40px">
+    <label class="lbl">Avatar</label>
+    <div class="av-grid" id="edit-av-grid"></div>
+    <label class="lbl">Name</label>
+    <input class="txt-inp" id="edit-name" type="text" maxlength="20">
+    <label class="lbl">Geburtsdatum</label>
+    <input class="txt-inp" id="edit-bday" type="date" onchange="suggestAgeEdit()">
+    <div class="age-suggestion" id="edit-age-suggestion">
+      <span style="font-size:20px" id="edit-age-sug-emoji">🐣</span>
+      <span id="edit-age-sug-txt">Empfehlung: Mini</span>
+    </div>
+    <label class="lbl">Altersgruppe</label>
+    <div class="age-grid" id="edit-age-grid"></div>
+    <button class="f-btn pri" onclick="saveEdit()">💾 Änderungen speichern</button>
+    <button class="f-btn ghost" onclick="showScreen('sc-pv')">Abbrechen</button>
   </div>
 </div>
 
 <!-- ══ JOIN ══ -->
 <div class="screen" id="sc-join">
   <div class="join-hdr"><h2>Mit Code einloggen 🔑</h2><p>Gib deinen persönlichen Lern-Code ein</p></div>
-  <div style="width:100%;max-width:460px;padding:0 4px">
-    <div class="lbl" style="text-align:center;letter-spacing:2px">DEIN CODE (z.B. FUCHS-8429)</div>
-    <input class="code-seg" id="code-full" placeholder="FUCHS-8429" maxlength="11"
-      style="width:100%;text-align:center;font-size:24px;letter-spacing:4px;margin-bottom:16px"
-      oninput="this.value=this.value.toUpperCase()" autocomplete="off" autocorrect="off"
+  <div style="width:100%;max-width:460px;padding:0 16px">
+    <label class="lbl" style="text-align:center;letter-spacing:2px">CODE (z.B. FUCHS-8429)</label>
+    <input class="txt-inp" id="code-full" placeholder="FUCHS-8429" maxlength="11"
+      style="text-align:center;font-size:22px;letter-spacing:3px"
+      oninput="this.value=this.value.toUpperCase()" autocomplete="off"
       autocapitalize="characters" spellcheck="false">
     <div class="code-hint">Den Code findest du im Profil unter <strong>🔑 Mein Code</strong></div>
-    <button class="f-btn pri" onclick="joinCode()" style="margin-bottom:11px">Einloggen ✓</button>
+    <button class="f-btn pri" onclick="joinCode()">Einloggen ✓</button>
     <button class="f-btn ghost" onclick="showScreen('sc-splash')">Zurück</button>
   </div>
 </div>
@@ -443,15 +496,26 @@
     <div class="greet" id="greet"></div>
     <div class="greet-s" id="greet-s"></div>
     <div class="streak-b">
-      <div class="streak-l">
-        <div style="font-size:34px">🔥</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:30px">🔥</div>
         <div>
-          <div style="font-size:11px;font-weight:700;opacity:.85;text-transform:uppercase;letter-spacing:1px">Lernserie</div>
-          <div style="font-family:'Baloo 2',cursive;font-size:28px;font-weight:800;line-height:1" id="streak-n">1</div>
-          <div style="font-size:12px;opacity:.85">Tag(e) in Folge</div>
+          <div style="font-size:10px;font-weight:700;opacity:.85;text-transform:uppercase;letter-spacing:1px">Lernserie</div>
+          <div style="font-family:'Baloo 2',cursive;font-size:26px;font-weight:800;line-height:1" id="streak-n">1</div>
+          <div style="font-size:11px;opacity:.85">Tag(e) in Folge</div>
         </div>
       </div>
-      <div style="text-align:right;font-size:13px;opacity:.85;font-weight:600">Weiter so! 💪</div>
+      <div style="text-align:right;font-size:12px;opacity:.85;font-weight:600">Weiter so! 💪</div>
+    </div>
+    <!-- Daily Challenge -->
+    <div class="daily-b" id="daily-banner" onclick="startDaily()">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:28px">⚡</div>
+        <div>
+          <div style="font-size:10px;font-weight:700;opacity:.85;text-transform:uppercase;letter-spacing:1px">Tagesaufgabe</div>
+          <div style="font-family:'Baloo 2',cursive;font-size:16px;font-weight:800" id="daily-txt">3 Fragen · +50 Bonus-XP</div>
+        </div>
+      </div>
+      <div class="daily-btn" id="daily-btn-txt">Starten →</div>
     </div>
     <div class="sec-t">📚 Fächer</div>
     <div class="sub-grid" id="sub-grid"></div>
@@ -460,7 +524,7 @@
     <div class="nb on" onclick="navTo('home')"><div class="ni">🏠</div>Start</div>
     <div class="nb" onclick="navTo('explore')"><div class="ni">🤖</div>KI-Tutor</div>
     <div class="nb" onclick="navTo('profile')"><div class="ni">🏆</div>Profil</div>
-    <div class="nb" onclick="openSettings()"><div class="ni">⚙️</div>Einstellungen</div>
+    <div class="nb" onclick="navTo('settings')"><div class="ni">⚙️</div>Einstellungen</div>
   </nav>
 </div>
 
@@ -481,7 +545,10 @@
     <div class="qc" id="qc">1/5</div>
   </div>
   <div class="quiz-con">
-    <div class="q-tag" id="q-tag">🔢 Mathe</div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+      <div class="q-tag" id="q-tag">🔢 Mathe</div>
+      <div class="diff-badge" id="diff-badge" style="background:var(--grn)">Normal</div>
+    </div>
     <div class="q-txt" id="q-txt">Lädt…</div>
     <span class="q-illus" id="q-illus"></span>
     <div id="q-ans"></div>
@@ -506,6 +573,9 @@
       <div class="sb"><div class="sn" id="r-pc">0%</div><div class="sl">Score</div></div>
     </div>
     <div class="rxp" id="r-xp">+50 XP ⭐</div>
+    <div id="r-repeat-msg" style="display:none;background:#fff3cd;border-radius:10px;padding:10px;margin-bottom:12px;font-size:13px;font-weight:700;color:#856404">
+      🔁 Falsch beantwortet: Wir erinnern dich morgen!
+    </div>
     <button class="rb pri" onclick="showScreen('sc-lessons')">Weiter lernen 📚</button>
     <button class="rb sec" onclick="navTo('home')">Zum Menü</button>
   </div>
@@ -527,16 +597,24 @@
         <div><div class="pvn" id="pv-str" style="color:var(--pur)">0</div><div class="pvl">Tage-Serie</div></div>
       </div>
     </div>
-    <div class="sec-t" style="margin-top:0">🏅 Auszeichnungen</div>
+    <!-- Weekly XP chart -->
+    <div class="chart-wrap">
+      <div style="font-family:'Baloo 2',cursive;font-size:15px;font-weight:800">📈 XP diese Woche</div>
+      <div class="chart-bars" id="week-chart"></div>
+    </div>
+    <div class="sec-t" style="margin-top:4px">🏅 Auszeichnungen</div>
     <div class="ach-g" id="ach-g"></div>
+    <div class="sec-t">🎨 Avatar-Shop</div>
+    <div class="shop-grid" id="avatar-shop"></div>
+    <button class="sw-btn" onclick="showScreen('sc-edit');setupEdit()" style="border-color:var(--sec);color:var(--sec)">✏️ Profil bearbeiten</button>
+    <button class="sw-btn" onclick="navTo('parent')">👨‍👩‍👧 Eltern-Bereich</button>
     <button class="sw-btn" onclick="switchProf()">↩ Profil wechseln</button>
-    <button class="sw-btn" onclick="openSettings()" style="margin-top:10px;border-color:var(--pri);color:var(--pri)">⚙️ API-Key & Einstellungen</button>
   </div>
   <nav class="bnav">
     <div class="nb" onclick="navTo('home')"><div class="ni">🏠</div>Start</div>
     <div class="nb" onclick="navTo('explore')"><div class="ni">🤖</div>KI-Tutor</div>
     <div class="nb on" onclick="navTo('profile')"><div class="ni">🏆</div>Profil</div>
-    <div class="nb" onclick="openSettings()"><div class="ni">⚙️</div>Einstellungen</div>
+    <div class="nb" onclick="navTo('settings')"><div class="ni">⚙️</div>Einstellungen</div>
   </nav>
 </div>
 
@@ -555,75 +633,115 @@
     <div class="nb" onclick="navTo('home')"><div class="ni">🏠</div>Start</div>
     <div class="nb on" onclick="navTo('explore')"><div class="ni">🤖</div>KI-Tutor</div>
     <div class="nb" onclick="navTo('profile')"><div class="ni">🏆</div>Profil</div>
-    <div class="nb" onclick="openSettings()"><div class="ni">⚙️</div>Einstellungen</div>
+    <div class="nb" onclick="navTo('settings')"><div class="ni">⚙️</div>Einstellungen</div>
   </nav>
 </div>
 
-<!-- ══ SETTINGS SCREEN ══ -->
+<!-- ══ PARENTAL AREA ══ -->
+<div class="screen" id="sc-parent">
+  <div class="bbar">
+    <div class="bk" onclick="navTo('profile')">←</div>
+    <div class="bbar-t">👨‍👩‍👧 Eltern-Bereich</div>
+  </div>
+  <div id="parent-pin-screen" style="display:flex;flex-direction:column;align-items:center;padding:30px 20px">
+    <div style="font-size:60px;margin-bottom:12px">🔒</div>
+    <div style="font-family:'Baloo 2',cursive;font-size:20px;font-weight:800;margin-bottom:6px;text-align:center">Eltern-PIN eingeben</div>
+    <div style="color:var(--muted);font-size:13px;font-weight:600;margin-bottom:20px;text-align:center">Standard-PIN: <strong>1234</strong><br>Änderbar in den Einstellungen</div>
+    <div class="pin-display" id="pin-display">·  ·  ·  ·</div>
+    <div class="pin-grid">
+      <button class="pin-btn" onclick="pinPress('1')">1</button>
+      <button class="pin-btn" onclick="pinPress('2')">2</button>
+      <button class="pin-btn" onclick="pinPress('3')">3</button>
+      <button class="pin-btn" onclick="pinPress('4')">4</button>
+      <button class="pin-btn" onclick="pinPress('5')">5</button>
+      <button class="pin-btn" onclick="pinPress('6')">6</button>
+      <button class="pin-btn" onclick="pinPress('7')">7</button>
+      <button class="pin-btn" onclick="pinPress('8')">8</button>
+      <button class="pin-btn" onclick="pinPress('9')">9</button>
+      <button class="pin-btn" onclick="pinPress('C')" style="font-size:16px;color:var(--muted)">⌫</button>
+      <button class="pin-btn" onclick="pinPress('0')">0</button>
+      <button class="pin-btn" onclick="pinPress('OK')" style="background:var(--pri);color:#fff;font-size:14px">OK</button>
+    </div>
+  </div>
+  <div id="parent-dashboard" style="display:none;padding:16px 16px 80px;max-width:600px;margin:0 auto;width:100%">
+    <div style="font-family:'Baloo 2',cursive;font-size:18px;font-weight:800;margin-bottom:14px">📊 Kinder-Übersicht</div>
+    <div id="parent-children"></div>
+    <div style="font-family:'Baloo 2',cursive;font-size:16px;font-weight:800;margin:18px 0 10px">🏆 Wochentrophäe</div>
+    <div class="card" id="weekly-trophy">
+      <div style="text-align:center;font-size:40px;margin-bottom:8px">🏅</div>
+      <div style="text-align:center;font-family:'Baloo 2',cursive;font-size:15px;font-weight:800" id="trophy-txt">Wird jeden Freitag vergeben!</div>
+    </div>
+    <div style="font-family:'Baloo 2',cursive;font-size:16px;font-weight:800;margin:14px 0 10px">⚙️ Eltern-PIN ändern</div>
+    <input class="txt-inp" id="new-pin" type="number" placeholder="Neuer 4-stelliger PIN" maxlength="4" style="margin-bottom:10px">
+    <button class="f-btn teal" onclick="savePin()">PIN speichern</button>
+  </div>
+</div>
+
+<!-- ══ SETTINGS ══ -->
 <div class="screen" id="sc-settings">
-  <div class="bbar" style="background:linear-gradient(135deg,#FF6B35,#FF8FAB);border:none;box-shadow:none">
-    <div class="bk" id="settings-back-btn" style="background:rgba(255,255,255,0.2)" onclick="settingsBack()">←</div>
+  <div class="bbar" style="background:linear-gradient(135deg,#FF6B35,#FF8FAB);box-shadow:none">
+    <div class="bk" style="background:rgba(255,255,255,.2)" onclick="settingsBack()">←</div>
     <div class="bbar-t" style="color:#fff">⚙️ Einstellungen</div>
   </div>
+  <div class="sett-con">
 
-  <div style="padding:24px 20px 100px;max-width:520px;margin:0 auto;width:100%;overflow-y:auto;-webkit-overflow-scrolling:touch">
-
-    <!-- API KEY CARD -->
-    <div style="background:#fff;border-radius:20px;padding:22px;box-shadow:0 4px 20px rgba(0,0,0,.08);margin-bottom:18px">
-      <div style="font-family:'Baloo 2',cursive;font-size:19px;font-weight:800;margin-bottom:6px">🤖 Anthropic API-Key</div>
-      <div style="font-size:13px;color:#888;font-weight:600;line-height:1.6;margin-bottom:16px">
-        Mit API-Key werden Fragen live von KI generiert.<br>
-        Ohne Key laufen die eingebauten Offline-Fragen.<br>
-        Der Key wird nur <strong>lokal auf diesem Gerät</strong> gespeichert.
+    <div class="card">
+      <div style="font-family:'Baloo 2',cursive;font-size:17px;font-weight:800;margin-bottom:6px">🤖 Anthropic API-Key</div>
+      <div style="font-size:12px;color:#888;font-weight:600;line-height:1.6;margin-bottom:14px">
+        Mit API-Key: KI generiert frische Fragen live.<br>
+        Ohne API-Key: Eingebaute Offline-Fragen.<br>
+        Wird nur <strong>lokal auf diesem Gerät</strong> gespeichert.
       </div>
-
-      <div style="position:relative;margin-bottom:14px">
+      <div style="position:relative;margin-bottom:12px">
         <input id="key-input" type="password" placeholder="sk-ant-api03-…"
           autocomplete="off" autocorrect="off" spellcheck="false"
-          style="width:100%;padding:13px 48px 13px 16px;border-radius:13px;border:2px solid #eee;
-            font-size:14px;font-weight:600;font-family:monospace;letter-spacing:.5px;
-            outline:none;transition:border-color .2s;-webkit-appearance:none"
+          style="width:100%;padding:12px 44px 12px 14px;border-radius:12px;border:2px solid #eee;
+            font-size:13px;font-weight:600;font-family:monospace;letter-spacing:.5px;
+            outline:none;-webkit-appearance:none"
           onfocus="this.style.borderColor='var(--pri)'" onblur="this.style.borderColor='#eee'">
         <span id="key-eye" onclick="toggleKeyVis()"
-          style="position:absolute;right:14px;top:50%;transform:translateY(-50%);
-            font-size:20px;cursor:pointer;-webkit-user-select:none;user-select:none;
-            -webkit-tap-highlight-color:transparent">👁️</span>
+          style="position:absolute;right:12px;top:50%;transform:translateY(-50%);
+            font-size:18px;cursor:pointer;-webkit-user-select:none;user-select:none">👁️</span>
       </div>
-
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px">
-        <div id="key-dot" style="width:11px;height:11px;border-radius:50%;background:#ccc;flex-shrink:0"></div>
-        <span id="key-status-txt" style="font-size:13px;font-weight:700;color:#888">Kein API-Key – Offline-Fragen aktiv</span>
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:14px">
+        <div id="key-dot" style="width:10px;height:10px;border-radius:50%;background:#ccc;flex-shrink:0"></div>
+        <span id="key-status-txt" style="font-size:12px;font-weight:700;color:#888">Kein API-Key – Offline-Fragen aktiv</span>
       </div>
-
       <button onclick="saveKey()"
-        style="width:100%;padding:15px;border-radius:13px;border:none;
-          background:linear-gradient(135deg,#FF6B35,#FF8FAB);color:#fff;
-          font-family:'Baloo 2',cursive;font-size:18px;font-weight:800;
-          cursor:pointer;margin-bottom:10px;-webkit-tap-highlight-color:transparent;
-          touch-action:manipulation">
-        💾 Key speichern
-      </button>
+        style="width:100%;padding:13px;border-radius:12px;border:none;
+          background:linear-gradient(135deg,var(--pri),var(--pnk));color:#fff;
+          font-family:'Baloo 2',cursive;font-size:16px;font-weight:800;
+          cursor:pointer;margin-bottom:8px;-webkit-tap-highlight-color:transparent">💾 Key speichern</button>
       <button id="key-delete-btn" onclick="deleteKey()"
-        style="width:100%;padding:13px;border-radius:13px;border:2px solid #eee;
-          background:#fff;font-family:'Baloo 2',cursive;font-size:15px;font-weight:700;
-          cursor:pointer;color:#888;display:none;-webkit-tap-highlight-color:transparent">
-        🗑️ Key löschen
-      </button>
+        style="width:100%;padding:11px;border-radius:12px;border:2px solid #eee;
+          background:#fff;font-family:'Baloo 2',cursive;font-size:14px;font-weight:700;
+          cursor:pointer;color:#888;display:none">🗑️ Key löschen</button>
     </div>
 
-    <!-- INFO CARD -->
-    <div style="background:#fff;border-radius:20px;padding:22px;box-shadow:0 4px 20px rgba(0,0,0,.08);margin-bottom:18px">
-      <div style="font-family:'Baloo 2',cursive;font-size:19px;font-weight:800;margin-bottom:12px">ℹ️ Über LernWelt</div>
-      <div style="font-size:14px;color:#555;line-height:1.7;font-weight:600">
-        🌍 LernWelt ist eine Lern-App für Kinder von 3–16 Jahren.<br>
-        🔥 Altersgerechte Inhalte in 4 Stufen.<br>
-        ☁️ Fortschritte werden in der Cloud gespeichert.<br>
-        🔑 Geräteübergreifender Zugang per Code – kein Login nötig.
+    <div class="card">
+      <div style="font-family:'Baloo 2',cursive;font-size:17px;font-weight:800;margin-bottom:10px">🌍 Sprache / Language</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button id="lang-de" onclick="setLang('de')"
+          style="padding:12px;border-radius:12px;border:3px solid var(--pri);background:rgba(255,107,53,.08);
+            font-family:'Baloo 2',cursive;font-size:15px;font-weight:800;cursor:pointer">🇩🇪 Deutsch</button>
+        <button id="lang-en" onclick="setLang('en')"
+          style="padding:12px;border-radius:12px;border:3px solid #eee;background:#fff;
+            font-family:'Baloo 2',cursive;font-size:15px;font-weight:800;cursor:pointer">🇬🇧 English</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-family:'Baloo 2',cursive;font-size:17px;font-weight:800;margin-bottom:8px">ℹ️ Über LernWelt</div>
+      <div style="font-size:13px;color:#555;line-height:1.7;font-weight:600">
+        🌍 Lern-App für Kinder von 3–16 Jahren<br>
+        🔥 Altersgerechte Inhalte in 4 Stufen<br>
+        ☁️ Fortschritte in der Cloud gespeichert<br>
+        🔑 Geräteübergreifend per Code – kein Login<br>
+        📦 Version 3.0
       </div>
     </div>
 
   </div>
-
   <nav class="bnav">
     <div class="nb" onclick="navTo('home')"><div class="ni">🏠</div>Start</div>
     <div class="nb" onclick="navTo('explore')"><div class="ni">🤖</div>KI-Tutor</div>
@@ -633,850 +751,794 @@
 </div>
 
 <script type="module">
-// ── wait for firebase ──────────────────────────────────────
-function fbWait(){ return window._fbReady?Promise.resolve():new Promise(r=>document.addEventListener('firebase-ready',r,{once:true})) }
+function fbWait(){return window._fbReady?Promise.resolve():new Promise(r=>document.addEventListener("firebase-ready",r,{once:true}))}
+
+// ── i18n ──────────────────────────────────────────────────
+const LANG={
+  de:{
+    greeting_mini:["Hallo, kleiner Stern! ⭐","Bereit zum Spielen? 🎮","Hallo, Entdeckerkind! 🐣"],
+    greeting_junior:["Hey Lernfuchs! 🦊","Na, Wissensdurst? 📚","Los geht's! 💪"],
+    greeting_mittel:["Bereit für Neues? 🦁","Let's go, Wissenslöwe! 💪","Was lernst du heute?"],
+    greeting_profi:["Guten Tag, Adler! 🦅","Zeit durchzustarten? 🚀","Wissen ist Macht! ⚡"],
+    subjects:"📚 Fächer",daily_label:"Tagesaufgabe",daily_sub:"3 Fragen · +50 Bonus-XP",
+    daily_done:"Heute erledigt ✅",start_btn:"Starten →",check_btn:"Antwort prüfen ✓",
+    next_btn:"Weiter →",correct_words:["Super! 🎉","Richtig! ✅","Klasse! 🌟","Jawohl! 🎯"],
+    wrong_words:["Fast! 💪","Nicht ganz…","Schade! 🙁","Versuche es nächstes Mal!"],
+    result_titles:{90:"Fantastisch!",70:"Sehr gut!",50:"Gut gemacht!",0:"Weiter üben!"},
+    result_trophies:{90:"🏆",70:"🥈",50:"🥉",0:"💪"},
+    lessons_done:"Lektion abgeschlossen!",xp_earned:"XP verdient! ⭐",
+    weekly_chart:"📈 XP diese Woche",
+    age_suggest:"Empfehlung:",
+  },
+  en:{
+    greeting_mini:["Hello, little star! ⭐","Ready to play? 🎮","Hi there! 🐣"],
+    greeting_junior:["Hey there! 🦊","Ready to learn? 📚","Let's go! 💪"],
+    greeting_mittel:["Ready for something new? 🦁","Let's go! 💪","What are we learning today?"],
+    greeting_profi:["Good day, eagle! 🦅","Time to fly! 🚀","Knowledge is power! ⚡"],
+    subjects:"📚 Subjects",daily_label:"Daily Challenge",daily_sub:"3 Questions · +50 Bonus XP",
+    daily_done:"Done for today ✅",start_btn:"Start →",check_btn:"Check answer ✓",
+    next_btn:"Next →",correct_words:["Great! 🎉","Correct! ✅","Excellent! 🌟","Yes! 🎯"],
+    wrong_words:["Almost! 💪","Not quite…","Too bad! 🙁","Try again next time!"],
+    result_titles:{90:"Fantastic!",70:"Very good!",50:"Well done!",0:"Keep practising!"},
+    result_trophies:{90:"🏆",70:"🥈",50:"🥉",0:"💪"},
+    lessons_done:"Lesson completed!",xp_earned:"XP earned! ⭐",
+    weekly_chart:"📈 XP this week",
+    age_suggest:"Suggestion:",
+  }
+};
+function t(key){const lang=localStorage.getItem("lw_lang")||"de";return (LANG[lang]||LANG.de)[key]||(LANG.de[key]||key)}
+function setLang(l){
+  localStorage.setItem("lw_lang",l);
+  document.getElementById("lang-de").style.borderColor=l==="de"?"var(--pri)":"#eee";
+  document.getElementById("lang-de").style.background=l==="de"?"rgba(255,107,53,.08)":"#fff";
+  document.getElementById("lang-en").style.borderColor=l==="en"?"var(--pri)":"#eee";
+  document.getElementById("lang-en").style.background=l==="en"?"rgba(255,107,53,.08)":"#fff";
+  if(S.prof){renderHome();}
+  toast(l==="de"?"🇩🇪 Sprache: Deutsch":"🇬🇧 Language: English");
+}
+window.setLang=setLang;
 
 // ── constants ──────────────────────────────────────────────
-const AVATARS=['🐣','🦊','🦁','🦅','🐸','🐼','🦄','🐯','🐧','🦋'];
-const WORDS=['LÖWE','TIGER','ADLER','FUCHS','BIENE','IGEL','OTTER','WOLF','LUCHS','DACHS'];
+const AVATARS=["🐣","🦊","🦁","🦅","🐸","🐼","🦄","🐯","🐧","🦋","🐱","🦀","🐬","🦁","🌟","🎃","🦖","🐉","🧸","🎠"];
+const SHOP_AVATARS=[
+  {e:"🐣",cost:0},{e:"🦊",cost:0},{e:"🦁",cost:0},{e:"🦅",cost:0},
+  {e:"🐸",cost:50},{e:"🐼",cost:50},{e:"🦄",cost:100},{e:"🐯",cost:100},
+  {e:"🐧",cost:150},{e:"🦋",cost:150},{e:"🦖",cost:200},{e:"🐉",cost:200},
+  {e:"🧸",cost:300},{e:"🎠",cost:300},{e:"🌟",cost:500},{e:"🎃",cost:500},
+];
+const WORDS=["LÖWE","TIGER","ADLER","FUCHS","BIENE","IGEL","OTTER","WOLF","LUCHS","DACHS","PANDA","KOALA"];
 const ACF={
-  mini:  {label:'Mini',  range:'3–5 J.',  em:'🐣',col:'#6BCB77',xm:1},
-  junior:{label:'Junior',range:'6–8 J.',  em:'🦊',col:'#4ECDC4',xm:1.5},
-  mittel:{label:'Mittel',range:'9–12 J.', em:'🦁',col:'#FF6B35',xm:2},
-  profi: {label:'Profi', range:'13–16 J.',em:'🦅',col:'#A78BFA',xm:3},
+  mini:  {label:"Mini",  range:"3–5 J.",  em:"🐣",col:"#6BCB77",xm:1},
+  junior:{label:"Junior",range:"6–8 J.",  em:"🦊",col:"#4ECDC4",xm:1.5},
+  mittel:{label:"Mittel",range:"9–12 J.", em:"🦁",col:"#FF6B35",xm:2},
+  profi: {label:"Profi", range:"13–16 J.",em:"🦅",col:"#A78BFA",xm:3},
 };
 const SUBS={
   mini:[
-    {id:'farben',    name:'Farben',      icon:'🎨',col:'#FF8FAB',bg:'linear-gradient(135deg,#FF8FAB,#FFB3C6)',les:4},
-    {id:'tiere',     name:'Tiere',       icon:'🦋',col:'#6BCB77',bg:'linear-gradient(135deg,#6BCB77,#9EE09E)',les:5},
-    {id:'zahlen',    name:'Zahlen 1–10', icon:'🔢',col:'#4ECDC4',bg:'linear-gradient(135deg,#4ECDC4,#88E3DE)',les:4},
-    {id:'buchstaben',name:'Buchstaben',  icon:'🔤',col:'#FF6B35',bg:'linear-gradient(135deg,#FF6B35,#FF9F6B)',les:4},
-    {id:'formen',    name:'Formen',      icon:'🔷',col:'#A78BFA',bg:'linear-gradient(135deg,#A78BFA,#C4B5FD)',les:3},
-    {id:'koerper',   name:'Mein Körper', icon:'🧍',col:'#FFD166',bg:'linear-gradient(135deg,#FFD166,#FFE4A0)',les:3},
+    {id:"farben",    name:"Farben",      icon:"🎨",col:"#FF8FAB",bg:"linear-gradient(135deg,#FF8FAB,#FFB3C6)",les:4},
+    {id:"tiere",     name:"Tiere",       icon:"🦋",col:"#6BCB77",bg:"linear-gradient(135deg,#6BCB77,#9EE09E)",les:5},
+    {id:"zahlen",    name:"Zahlen 1–10", icon:"🔢",col:"#4ECDC4",bg:"linear-gradient(135deg,#4ECDC4,#88E3DE)",les:4},
+    {id:"buchstaben",name:"Buchstaben",  icon:"🔤",col:"#FF6B35",bg:"linear-gradient(135deg,#FF6B35,#FF9F6B)",les:4},
+    {id:"formen",    name:"Formen",      icon:"🔷",col:"#A78BFA",bg:"linear-gradient(135deg,#A78BFA,#C4B5FD)",les:3},
+    {id:"koerper",   name:"Mein Körper", icon:"🧍",col:"#FFD166",bg:"linear-gradient(135deg,#FFD166,#FFE4A0)",les:3},
   ],
   junior:[
-    {id:'mathe',    name:'Mathe',     icon:'🔢',col:'#4ECDC4',bg:'linear-gradient(135deg,#4ECDC4,#88E3DE)',les:6},
-    {id:'lesen',    name:'Lesen',     icon:'📖',col:'#FF6B35',bg:'linear-gradient(135deg,#FF6B35,#FF9F6B)',les:5},
-    {id:'schreiben',name:'Schreiben', icon:'✏️',col:'#A78BFA',bg:'linear-gradient(135deg,#A78BFA,#C4B5FD)',les:5},
-    {id:'sachkunde',name:'Sachkunde', icon:'🌍',col:'#6BCB77',bg:'linear-gradient(135deg,#6BCB77,#9EE09E)',les:4},
-    {id:'englisch', name:'Englisch',  icon:'🇬🇧',col:'#FF8FAB',bg:'linear-gradient(135deg,#FF8FAB,#FFB3C6)',les:5},
-    {id:'musik',    name:'Musik',     icon:'🎵',col:'#FFD166',bg:'linear-gradient(135deg,#FFD166,#FFE4A0)',les:3},
+    {id:"mathe",    name:"Mathe",     icon:"🔢",col:"#4ECDC4",bg:"linear-gradient(135deg,#4ECDC4,#88E3DE)",les:6},
+    {id:"lesen",    name:"Lesen",     icon:"📖",col:"#FF6B35",bg:"linear-gradient(135deg,#FF6B35,#FF9F6B)",les:5},
+    {id:"schreiben",name:"Schreiben", icon:"✏️",col:"#A78BFA",bg:"linear-gradient(135deg,#A78BFA,#C4B5FD)",les:5},
+    {id:"sachkunde",name:"Sachkunde", icon:"🌍",col:"#6BCB77",bg:"linear-gradient(135deg,#6BCB77,#9EE09E)",les:4},
+    {id:"englisch", name:"Englisch",  icon:"🇬🇧",col:"#FF8FAB",bg:"linear-gradient(135deg,#FF8FAB,#FFB3C6)",les:5},
+    {id:"musik",    name:"Musik",     icon:"🎵",col:"#FFD166",bg:"linear-gradient(135deg,#FFD166,#FFE4A0)",les:3},
   ],
   mittel:[
-    {id:'mathe',     name:'Mathematik',icon:'📐',col:'#4ECDC4',bg:'linear-gradient(135deg,#4ECDC4,#36a5a0)',les:8},
-    {id:'deutsch',   name:'Deutsch',   icon:'📝',col:'#FF6B35',bg:'linear-gradient(135deg,#FF6B35,#cc5528)',les:7},
-    {id:'englisch',  name:'Englisch',  icon:'🇬🇧',col:'#FF8FAB',bg:'linear-gradient(135deg,#FF8FAB,#e0607a)',les:6},
-    {id:'geschichte',name:'Geschichte',icon:'🏛️',col:'#A78BFA',bg:'linear-gradient(135deg,#A78BFA,#7c5cbf)',les:5},
-    {id:'geografie', name:'Geografie', icon:'🌍',col:'#6BCB77',bg:'linear-gradient(135deg,#6BCB77,#4a9955)',les:5},
-    {id:'biologie',  name:'Biologie',  icon:'🌿',col:'#FFD166',bg:'linear-gradient(135deg,#FFD166,#d4a017)',les:5},
+    {id:"mathe",     name:"Mathematik",icon:"📐",col:"#4ECDC4",bg:"linear-gradient(135deg,#4ECDC4,#36a5a0)",les:8},
+    {id:"deutsch",   name:"Deutsch",   icon:"📝",col:"#FF6B35",bg:"linear-gradient(135deg,#FF6B35,#cc5528)",les:7},
+    {id:"englisch",  name:"Englisch",  icon:"🇬🇧",col:"#FF8FAB",bg:"linear-gradient(135deg,#FF8FAB,#e0607a)",les:6},
+    {id:"geschichte",name:"Geschichte",icon:"🏛️",col:"#A78BFA",bg:"linear-gradient(135deg,#A78BFA,#7c5cbf)",les:5},
+    {id:"geografie", name:"Geografie", icon:"🌍",col:"#6BCB77",bg:"linear-gradient(135deg,#6BCB77,#4a9955)",les:5},
+    {id:"biologie",  name:"Biologie",  icon:"🌿",col:"#FFD166",bg:"linear-gradient(135deg,#FFD166,#d4a017)",les:5},
   ],
   profi:[
-    {id:'mathe',     name:'Algebra',       icon:'➕',col:'#4ECDC4',bg:'linear-gradient(135deg,#4ECDC4,#249a94)',les:9},
-    {id:'physik',    name:'Physik',        icon:'⚡',col:'#FF6B35',bg:'linear-gradient(135deg,#FF6B35,#aa3d18)',les:7},
-    {id:'chemie',    name:'Chemie',        icon:'🧪',col:'#A78BFA',bg:'linear-gradient(135deg,#A78BFA,#6c45d4)',les:6},
-    {id:'englisch',  name:'Englisch B1/B2',icon:'🇬🇧',col:'#FF8FAB',bg:'linear-gradient(135deg,#FF8FAB,#c04060)',les:7},
-    {id:'informatik',name:'Informatik',    icon:'💻',col:'#6BCB77',bg:'linear-gradient(135deg,#6BCB77,#3a8c46)',les:6},
-    {id:'geschichte',name:'Geschichte',    icon:'📜',col:'#FFD166',bg:'linear-gradient(135deg,#FFD166,#b8860b)',les:6},
+    {id:"mathe",     name:"Algebra",       icon:"➕",col:"#4ECDC4",bg:"linear-gradient(135deg,#4ECDC4,#249a94)",les:9},
+    {id:"physik",    name:"Physik",        icon:"⚡",col:"#FF6B35",bg:"linear-gradient(135deg,#FF6B35,#aa3d18)",les:7},
+    {id:"chemie",    name:"Chemie",        icon:"🧪",col:"#A78BFA",bg:"linear-gradient(135deg,#A78BFA,#6c45d4)",les:6},
+    {id:"englisch",  name:"Englisch B1/B2",icon:"🇬🇧",col:"#FF8FAB",bg:"linear-gradient(135deg,#FF8FAB,#c04060)",les:7},
+    {id:"informatik",name:"Informatik",    icon:"💻",col:"#6BCB77",bg:"linear-gradient(135deg,#6BCB77,#3a8c46)",les:6},
+    {id:"geschichte",name:"Geschichte",    icon:"📜",col:"#FFD166",bg:"linear-gradient(135deg,#FFD166,#b8860b)",les:6},
   ],
 };
 const LN={
   mini:{
-    farben:['Rot, Blau & Gelb','Grün & Orange','Mischen von Farben','Farben im Alltag'],
-    tiere:['Haustiere','Bauernhoftiere','Wildtiere','Wassertiere','Vögel'],
-    zahlen:['Zahlen 1–3','Zahlen 4–6','Zahlen 7–10','Zählen üben'],
-    buchstaben:['A, B, C','D, E, F','G, H, I','Mein Name'],
-    formen:['Kreis & Quadrat','Dreieck & Rechteck','Formen in der Natur'],
-    koerper:['Kopf & Gesicht','Arme & Beine','Innere Organe'],
+    farben:["Rot, Blau & Gelb","Grün & Orange","Mischen von Farben","Farben im Alltag"],
+    tiere:["Haustiere","Bauernhoftiere","Wildtiere","Wassertiere","Vögel"],
+    zahlen:["Zahlen 1–3","Zahlen 4–6","Zahlen 7–10","Zählen üben"],
+    buchstaben:["A, B, C","D, E, F","G, H, I","Mein Name"],
+    formen:["Kreis & Quadrat","Dreieck & Rechteck","Formen in der Natur"],
+    koerper:["Kopf & Gesicht","Arme & Beine","Innere Organe"],
   },
   junior:{
-    mathe:['Plus bis 20','Minus bis 20','Plus bis 100','Minus bis 100','Malreihen 2 & 5','Malreihen 3 & 4'],
-    lesen:['Silben lesen','Kurze Wörter','Sätze lesen','Kleine Geschichte','Laut & leise'],
-    schreiben:['Druckbuchstaben','Großschreibung','Satzzeichen','Mein erster Brief','Diktat'],
-    sachkunde:['Die vier Jahreszeiten','Tiere im Winter','Unser Wetter','Die Feuerwehr'],
-    englisch:['Hello & Goodbye','Numbers 1–10','Colors','My Family','Animals in English'],
-    musik:['Rhythmus klatschen','Noten kennenlernen','Deutsche Kinderlieder'],
+    mathe:["Plus bis 20","Minus bis 20","Plus bis 100","Minus bis 100","Malreihen 2 & 5","Malreihen 3 & 4"],
+    lesen:["Silben lesen","Kurze Wörter","Sätze lesen","Kleine Geschichte","Laut & leise"],
+    schreiben:["Druckbuchstaben","Großschreibung","Satzzeichen","Mein erster Brief","Diktat"],
+    sachkunde:["Die vier Jahreszeiten","Tiere im Winter","Unser Wetter","Die Feuerwehr"],
+    englisch:["Hello & Goodbye","Numbers 1–10","Colors","My Family","Animals in English"],
+    musik:["Rhythmus klatschen","Noten kennenlernen","Deutsche Kinderlieder"],
   },
   mittel:{
-    mathe:['Brüche verstehen','Brüche addieren','Dezimalzahlen','Geometrie: Flächen','Prozentrechnung','Gleichungen','Statistik','Negative Zahlen'],
-    deutsch:['Wortarten','Satzglieder','Kommaregeln','Aufsatz schreiben','Rechtschreibung','Literatur','Gedichte analysieren'],
-    englisch:['Simple Past','Present Perfect','Vokabeln Alltag','Reading Comprehension','Writing Skills','Listening'],
-    geschichte:['Das alte Ägypten','Antikes Rom','Mittelalter','Reformation','Industriezeitalter'],
-    geografie:['Kontinente & Ozeane','Bundesländer','Klima & Wetter','Bevölkerung','Naturkatastrophen'],
-    biologie:['Zellen','Pflanzen & Photosynthese','Ökosysteme','Evolution','Menschlicher Körper'],
+    mathe:["Brüche verstehen","Brüche addieren","Dezimalzahlen","Geometrie: Flächen","Prozentrechnung","Gleichungen","Statistik","Negative Zahlen"],
+    deutsch:["Wortarten","Satzglieder","Kommaregeln","Aufsatz schreiben","Rechtschreibung","Literatur","Gedichte analysieren"],
+    englisch:["Simple Past","Present Perfect","Vokabeln Alltag","Reading Comprehension","Writing Skills","Listening"],
+    geschichte:["Das alte Ägypten","Antikes Rom","Mittelalter","Reformation","Industriezeitalter"],
+    geografie:["Kontinente & Ozeane","Bundesländer","Klima & Wetter","Bevölkerung","Naturkatastrophen"],
+    biologie:["Zellen","Pflanzen & Photosynthese","Ökosysteme","Evolution","Menschlicher Körper"],
   },
   profi:{
-    mathe:['Lineare Funktionen','Quadratische Gleichungen','Trigonometrie','Wahrscheinlichkeit','Vektoren','Differentialrechnung I','Integralrechnung I','Stochastik','Analytische Geometrie'],
-    physik:['Newtonsche Gesetze','Energie & Arbeit','Elektrizität','Magnetismus','Wellen & Optik','Relativitätstheorie','Quantenphysik'],
-    chemie:['Atombau','Periodensystem','Chemische Bindungen','Säuren & Basen','Organische Chemie','Redox-Reaktionen'],
-    englisch:['Complex Sentence Structures','Advanced Vocabulary','Essay Writing','Media Literacy','Literature Analysis','Presentations','C1 Preparation'],
-    informatik:['Algorithmen & Logik','Python Grundlagen','Datenstrukturen','Web-Grundlagen','Künstliche Intelligenz','Cybersicherheit'],
-    geschichte:['Weimarer Republik','Nationalsozialismus','Zweiter Weltkrieg','Kalter Krieg','Wiedervereinigung','Globalisierung'],
+    mathe:["Lineare Funktionen","Quadratische Gleichungen","Trigonometrie","Wahrscheinlichkeit","Vektoren","Differentialrechnung I","Integralrechnung I","Stochastik","Analytische Geometrie"],
+    physik:["Newtonsche Gesetze","Energie & Arbeit","Elektrizität","Magnetismus","Wellen & Optik","Relativitätstheorie","Quantenphysik"],
+    chemie:["Atombau","Periodensystem","Chemische Bindungen","Säuren & Basen","Organische Chemie","Redox-Reaktionen"],
+    englisch:["Complex Sentence Structures","Advanced Vocabulary","Essay Writing","Media Literacy","Literature Analysis","Presentations","C1 Preparation"],
+    informatik:["Algorithmen & Logik","Python Grundlagen","Datenstrukturen","Web-Grundlagen","Künstliche Intelligenz","Cybersicherheit"],
+    geschichte:["Weimarer Republik","Nationalsozialismus","Zweiter Weltkrieg","Kalter Krieg","Wiedervereinigung","Globalisierung"],
   },
 };
 const ACHS=[
-  {id:'first',  icon:'🌟',name:'Erster Start',   cond:p=>p.lessonsCompleted>=1},
-  {id:'five',   icon:'🎯',name:'5 Lektionen',    cond:p=>p.lessonsCompleted>=5},
-  {id:'ten',    icon:'🏅',name:'10 Lektionen',   cond:p=>p.lessonsCompleted>=10},
-  {id:'xp100',  icon:'💎',name:'100 XP',         cond:p=>p.xp>=100},
-  {id:'xp500',  icon:'👑',name:'500 XP',         cond:p=>p.xp>=500},
-  {id:'streak3',icon:'🔥',name:'3 Tage Serie',   cond:p=>p.streak>=3},
-  {id:'perfect',icon:'✨',name:'Perfekte Runde', cond:p=>p._lastPerfect},
+  {id:"first",  icon:"🌟",name:"Erster Start",   cond:p=>p.lessonsCompleted>=1},
+  {id:"five",   icon:"🎯",name:"5 Lektionen",    cond:p=>p.lessonsCompleted>=5},
+  {id:"ten",    icon:"🏅",name:"10 Lektionen",   cond:p=>p.lessonsCompleted>=10},
+  {id:"twenty", icon:"💫",name:"20 Lektionen",   cond:p=>p.lessonsCompleted>=20},
+  {id:"xp100",  icon:"💎",name:"100 XP",         cond:p=>p.xp>=100},
+  {id:"xp500",  icon:"👑",name:"500 XP",         cond:p=>p.xp>=500},
+  {id:"xp1000", icon:"🔥",name:"1000 XP",        cond:p=>p.xp>=1000},
+  {id:"streak3",icon:"🔥",name:"3 Tage Serie",   cond:p=>p.streak>=3},
+  {id:"streak7",icon:"⚡",name:"7 Tage Serie",   cond:p=>p.streak>=7},
+  {id:"perfect",icon:"✨",name:"Perfekte Runde", cond:p=>p._lastPerfect},
+  {id:"daily5", icon:"📅",name:"5 Tagesaufgaben",cond:p=>(p.dailyCount||0)>=5},
+  {id:"shopper",icon:"🛍️",name:"Shop-Fan",       cond:p=>(p.ownedAvatars||[]).length>=6},
 ];
 
 // ── state ──────────────────────────────────────────────────
 const S={
-  prof:null, sub:null, lesson:null,
-  qs:[], qi:0, sel:null, ok:0, ng:0, ans:false,
-  chat:[], chatInit:false,
+  prof:null,sub:null,lesson:null,
+  qs:[],qi:0,sel:null,ok:0,ng:0,ans:false,
+  chat:[],chatInit:false,
+  diffLevel:1, // 1=normal 2=hard 3=expert
+  pinBuffer:"",
+  settingsFrom:"sc-splash",
+  isDaily:false,
 };
-let selAv=AVATARS[0], selAge='junior';
+let selAv=AVATARS[0],selAge="junior",editAv=AVATARS[0],editAge="junior";
 
 // ── helpers ───────────────────────────────────────────────
-function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0)}
-function loading(on,txt='Lädt…'){document.getElementById('loading').classList.toggle('on',on);document.getElementById('loading-txt').textContent=txt}
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2600)}
-function confetti(){const cols=['#FF6B35','#4ECDC4','#FFE66D','#A78BFA','#6BCB77','#FF8FAB'];for(let i=0;i<55;i++){const c=document.createElement('div');c.className='cf';c.style.left=Math.random()*100+'vw';c.style.background=cols[Math.floor(Math.random()*cols.length)];c.style.animationDuration=(Math.random()*2+1.5)+'s';c.style.animationDelay=(Math.random()*.5)+'s';c.style.borderRadius=Math.random()>.5?'50%':'2px';document.body.appendChild(c);setTimeout(()=>c.remove(),4000)}}
+function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.getElementById(id).classList.add("active");window.scrollTo(0,0)}
+function loading(on,txt="Lädt…"){document.getElementById("loading").classList.toggle("on",on);document.getElementById("loading-txt").textContent=txt}
+function toast(msg){const el=document.getElementById("toast");el.textContent=msg;el.classList.add("on");setTimeout(()=>el.classList.remove("on"),2700)}
+function confetti(){const c=["#FF6B35","#4ECDC4","#FFE66D","#A78BFA","#6BCB77","#FF8FAB"];for(let i=0;i<50;i++){const d=document.createElement("div");d.className="cf";d.style.left=Math.random()*100+"vw";d.style.background=c[Math.floor(Math.random()*c.length)];d.style.animationDuration=(Math.random()*2+1.5)+"s";d.style.animationDelay=(Math.random()*.5)+"s";d.style.borderRadius=Math.random()>.5?"50%":"2px";document.body.appendChild(d);setTimeout(()=>d.remove(),4000)}}
+function mdToHtml(x){return x.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>").replace(/\*(.*?)\*/g,"<em>$1</em>")}
+
 function navTo(tab){
-  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
-  if(tab==='home'){
-    if(S.prof){renderHome();showScreen('sc-home');}
-    else{showScreen('sc-splash');}
-    document.querySelectorAll('.nb').forEach(b=>{if(b.textContent.includes('Start'))b.classList.add('on')});
-  } else if(tab==='explore'){
-    initChat();showScreen('sc-explore');
-    document.querySelectorAll('.nb').forEach(b=>{if(b.textContent.includes('KI-Tutor'))b.classList.add('on')});
-  } else if(tab==='profile'){
-    renderPV();showScreen('sc-pv');
-    document.querySelectorAll('.nb').forEach(b=>{if(b.textContent.includes('Profil'))b.classList.add('on')});
-  } else if(tab==='settings'){
-    openSettings();
-  }
+  document.querySelectorAll(".nb").forEach(b=>b.classList.remove("on"));
+  const mark=(txt)=>document.querySelectorAll(".nb").forEach(b=>{if(b.textContent.includes(txt))b.classList.add("on")});
+  if(tab==="home"){if(S.prof){renderHome();showScreen("sc-home");}else showScreen("sc-splash");mark("Start")}
+  else if(tab==="explore"){initChat();showScreen("sc-explore");mark("KI-Tutor")}
+  else if(tab==="profile"){renderPV();showScreen("sc-pv");mark("Profil")}
+  else if(tab==="settings"){openSettings();mark("Einstellungen")}
+  else if(tab==="parent"){showParent();}
 }
+window.showScreen=showScreen;window.navTo=navTo;
 
-// Back from settings – return to previous screen
-let _settingsFrom = 'sc-splash';
-function settingsBack(){
-  showScreen(_settingsFrom);
-  // Restore nav active state
-  if(_settingsFrom==='sc-home') document.querySelectorAll('.nb').forEach(b=>{if(b.textContent.includes('Start'))b.classList.add('on')});
-  else if(_settingsFrom==='sc-pv') document.querySelectorAll('.nb').forEach(b=>{if(b.textContent.includes('Profil'))b.classList.add('on')});
-  else if(_settingsFrom==='sc-explore') document.querySelectorAll('.nb').forEach(b=>{if(b.textContent.includes('KI-Tutor'))b.classList.add('on')});
-}
-window.showScreen=showScreen;window.navTo=navTo;window.settingsBack=settingsBack;
-
-// ── API Key Management ─────────────────────────────────────
-const LS_KEY = 'lw_api_key';
-
-function getApiKey(){ return localStorage.getItem(LS_KEY)||'' }
-
-function openSettings(){
-  // Remember where we came from
-  const active = document.querySelector('.screen.active');
-  if(active && active.id !== 'sc-settings') _settingsFrom = active.id;
-  const key = getApiKey();
-  const inp = document.getElementById('key-input');
-  inp.value = key;
-  inp.type = 'password';
-  document.getElementById('key-eye').textContent = '👁️';
-  updateKeyStatus();
-  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
-  document.querySelectorAll('.nb').forEach(b=>{if(b.textContent.includes('Einstellungen'))b.classList.add('on')});
-  showScreen('sc-settings');
-}
-function closeSettings(){ settingsBack(); }
-function toggleKeyVis(){
-  const inp = document.getElementById('key-input');
-  const eye = document.getElementById('key-eye');
-  if(inp.type==='password'){ inp.type='text'; eye.textContent='🙈'; }
-  else { inp.type='password'; eye.textContent='👁️'; }
-}
-function saveKey(){
-  const val = document.getElementById('key-input').value.trim();
-  if(val && !val.startsWith('sk-ant-')){
-    toast('Ungültiger Key – muss mit sk-ant- beginnen ⚠️'); return;
-  }
-  if(val){ localStorage.setItem(LS_KEY, val); toast('✅ API-Key gespeichert! KI-Fragen aktiv'); }
-  else { localStorage.removeItem(LS_KEY); toast('Key entfernt – Offline-Fragen aktiv'); }
-  updateKeyStatus();
-}
-function deleteKey(){
-  localStorage.removeItem(LS_KEY);
-  document.getElementById('key-input').value='';
-  updateKeyStatus();
-  toast('Key gelöscht – Offline-Fragen aktiv');
-}
-function updateKeyStatus(){
-  const key = getApiKey();
-  const dot = document.getElementById('key-dot');
-  const txt = document.getElementById('key-status-txt');
-  const delBtn = document.getElementById('key-delete-btn');
-  if(key){
-    dot.style.background = '#6BCB77';
-    txt.textContent = '✅ API-Key gespeichert – KI-Fragen aktiv';
-    txt.style.color = '#3d9c4a';
-    delBtn.style.display = 'block';
-  } else {
-    dot.style.background = '#ccc';
-    txt.textContent = 'Kein API-Key – Offline-Fragen aktiv';
-    txt.style.color = '#888';
-    delBtn.style.display = 'none';
-  }
-}
-window.openSettings=openSettings;
-window.closeSettings=closeSettings;
-window.toggleKeyVis=toggleKeyVis;
-window.saveKey=saveKey;
-window.deleteKey=deleteKey;
-async function fbGet(id){const{doc,getDoc}=window._fs;const s=await getDoc(doc(window._db,'profiles',id));return s.exists()?s.data():null}
-async function fbSet(id,data){const{doc,setDoc}=window._fs;await setDoc(doc(window._db,'profiles',id),data,{merge:true})}
-async function fbCode(code){const{doc,getDoc}=window._fs;const s=await getDoc(doc(window._db,'codes',code));if(!s.exists())return null;return fbGet(s.data().profileId)}
-async function fbCodeSet(code,pid){const{doc,setDoc}=window._fs;await setDoc(doc(window._db,'codes',code),{profileId:pid})}
-async function fbUpdate(p){const{doc,updateDoc}=window._fs;await updateDoc(doc(window._db,'profiles',p.id),{xp:p.xp,lessonsCompleted:p.lessonsCompleted,streak:p.streak,_lastPerfect:p._lastPerfect,completedLessons:p.completedLessons})}
-
-// ── local storage ──────────────────────────────────────────
-const LS='lw_profiles';
-function lsGet(){try{return JSON.parse(localStorage.getItem(LS)||'[]')}catch{return[]}}
-function lsSave(p){const a=lsGet().filter(x=>x.id!==p.id);a.unshift({id:p.id,name:p.name,avatar:p.avatar,age:p.age,code:p.code});localStorage.setItem(LS,JSON.stringify(a.slice(0,10)))}
-
-// ── code ───────────────────────────────────────────────────
-function genCode(){return WORDS[Math.floor(Math.random()*WORDS.length)]+'-'+String(Math.floor(1000+Math.random()*9000))}
-
-// ── splash ─────────────────────────────────────────────────
-function renderSplash(){
-  const saved=lsGet();
-  const list=document.getElementById('prof-list');
-  const div=document.getElementById('divider');
-  list.innerHTML='';
-  div.style.display=saved.length?'flex':'none';
-  saved.forEach(p=>{
-    const cfg=ACF[p.age]||ACF.junior;
-    const c=document.createElement('div');c.className='prof-card';
-    c.innerHTML=`<div class="prof-av" style="background:${cfg.col}22">${p.avatar}</div><div class="prof-info"><div class="prof-name">${p.name}</div><div class="prof-meta">${cfg.em} ${cfg.label} · ${cfg.range}</div></div><div class="prof-code">${p.code}</div>`;
-    c.onclick=()=>loadLocal(p);list.appendChild(c);
+// ── firebase ───────────────────────────────────────────────
+async function fbGet(id){const{doc,getDoc}=window._fs;const s=await getDoc(doc(window._db,"profiles",id));return s.exists()?s.data():null}
+async function fbSet(id,data){const{doc,setDoc}=window._fs;await setDoc(doc(window._db,"profiles",id),data,{merge:true})}
+async function fbCode(code){const{doc,getDoc}=window._fs;const s=await getDoc(doc(window._db,"codes",code));if(!s.exists())return null;return fbGet(s.data().profileId)}
+async function fbCodeSet(code,pid){const{doc,setDoc}=window._fs;await setDoc(doc(window._db,"codes",code),{profileId:pid})}
+async function fbUpdate(p){
+  const{doc,updateDoc}=window._fs;
+  await updateDoc(doc(window._db,"profiles",p.id),{
+    xp:p.xp,lessonsCompleted:p.lessonsCompleted,streak:p.streak,
+    _lastPerfect:p._lastPerfect,completedLessons:p.completedLessons,
+    repeatQueue:p.repeatQueue||[],weeklyXP:p.weeklyXP||[],
+    dailyCount:p.dailyCount||0,dailyLastDate:p.dailyLastDate||"",
+    ownedAvatars:p.ownedAvatars||[],avatar:p.avatar,
+    age:p.age,name:p.name,bday:p.bday||"",
   });
 }
-async function loadLocal(local){
-  loading(true,'Fortschritt wird geladen…');
-  await fbWait();
-  try{const fresh=await fbGet(local.id);S.prof=fresh||local}
-  catch{S.prof=local}
-  lsSave(S.prof);loading(false);renderHome();showScreen('sc-home');
-}
 
-// ── create ─────────────────────────────────────────────────
+// ── local storage ──────────────────────────────────────────
+const LS="lw_profiles",LS_KEY="lw_api_key";
+function lsGet(){try{return JSON.parse(localStorage.getItem(LS)||"[]")}catch{return[]}}
+function lsSave(p){const a=lsGet().filter(x=>x.id!==p.id);a.unshift({id:p.id,name:p.name,avatar:p.avatar,age:p.age,code:p.code});localStorage.setItem(LS,JSON.stringify(a.slice(0,10)))}
+function getApiKey(){return localStorage.getItem(LS_KEY)||""}
+
+// ── age detection from birthday ───────────────────────────
+function ageFromBday(bday){
+  if(!bday)return null;
+  const diff=Date.now()-new Date(bday).getTime();
+  const years=Math.floor(diff/(1000*60*60*24*365.25));
+  if(years<=5)return"mini";
+  if(years<=8)return"junior";
+  if(years<=12)return"mittel";
+  return"profi";
+}
+function suggestAge(){
+  const bday=document.getElementById("cr-bday").value;
+  const age=ageFromBday(bday);
+  if(!age)return;
+  const sug=document.getElementById("age-suggestion");
+  const cfg=ACF[age];
+  document.getElementById("age-sug-emoji").textContent=cfg.em;
+  document.getElementById("age-sug-txt").textContent=`${t("age_suggest")} ${cfg.label} (${cfg.range})`;
+  sug.style.display="flex";
+  // Auto-select
+  selAge=age;
+  document.querySelectorAll("#age-grid .age-opt").forEach(el=>{
+    el.classList.toggle("sel",el.dataset.age===age);
+  });
+}
+function suggestAgeEdit(){
+  const bday=document.getElementById("edit-bday").value;
+  const age=ageFromBday(bday);
+  if(!age)return;
+  const sug=document.getElementById("edit-age-suggestion");
+  const cfg=ACF[age];
+  document.getElementById("edit-age-sug-emoji").textContent=cfg.em;
+  document.getElementById("edit-age-sug-txt").textContent=`${t("age_suggest")} ${cfg.label} (${cfg.range})`;
+  sug.style.display="flex";
+  editAge=age;
+  document.querySelectorAll("#edit-age-grid .age-opt").forEach(el=>{
+    el.classList.toggle("sel",el.dataset.age===age);
+  });
+}
+window.suggestAge=suggestAge;window.suggestAgeEdit=suggestAgeEdit;
+
+// ── create setup ───────────────────────────────────────────
 function setupCreate(){
-  const g=document.getElementById('av-grid');g.innerHTML='';
-  AVATARS.forEach(a=>{const d=document.createElement('div');d.className='av-opt'+(a===selAv?' sel':'');d.textContent=a;d.onclick=()=>{selAv=a;g.querySelectorAll('.av-opt').forEach(x=>x.classList.remove('sel'));d.classList.add('sel')};g.appendChild(d)});
-  const ag=document.getElementById('age-grid');ag.innerHTML='';
-  Object.entries(ACF).forEach(([k,c])=>{const d=document.createElement('div');d.className='age-opt'+(k===selAge?' sel':'');d.innerHTML=`<span class="emo">${c.em}</span><div class="lbl2">${c.label}</div><div class="rng">${c.range}</div>`;d.onclick=()=>{selAge=k;ag.querySelectorAll('.age-opt').forEach(x=>x.classList.remove('sel'));d.classList.add('sel')};ag.appendChild(d)});
+  selAv=AVATARS[0];selAge="junior";
+  const g=document.getElementById("av-grid");g.innerHTML="";
+  AVATARS.slice(0,10).forEach(a=>{const d=document.createElement("div");d.className="av-opt"+(a===selAv?" sel":"");d.textContent=a;d.onclick=()=>{selAv=a;g.querySelectorAll(".av-opt").forEach(x=>x.classList.remove("sel"));d.classList.add("sel")};g.appendChild(d)});
+  const ag=document.getElementById("age-grid");ag.innerHTML="";
+  Object.entries(ACF).forEach(([k,c])=>{const d=document.createElement("div");d.className="age-opt"+(k===selAge?" sel":"");d.dataset.age=k;d.innerHTML=`<span class="emo">${c.em}</span><div class="lbl2">${c.label}</div><div class="rng">${c.range}</div>`;d.onclick=()=>{selAge=k;ag.querySelectorAll(".age-opt").forEach(x=>x.classList.remove("sel"));d.classList.add("sel")};ag.appendChild(d)});
+  document.getElementById("cr-name").value="";
+  document.getElementById("cr-bday").value="";
+  document.getElementById("age-suggestion").style.display="none";
 }
 window.setupCreate=setupCreate;
 
 async function createProfile(){
-  const name=document.getElementById('cr-name').value.trim();
-  if(!name){toast('Bitte einen Namen eingeben! 👆');return}
-  loading(true,'Profil wird erstellt…');await fbWait();
-  const id='p_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
-  const code=genCode();
-  const prof={id,name,avatar:selAv,age:selAge,code,xp:0,streak:1,lessonsCompleted:0,completedLessons:[],_lastPerfect:false,createdAt:new Date().toISOString()};
+  const name=document.getElementById("cr-name").value.trim();
+  if(!name){toast("Bitte einen Namen eingeben! 👆");return}
+  loading(true,"Profil wird erstellt…");await fbWait();
+  const id="p_"+Date.now()+"_"+Math.random().toString(36).slice(2,7);
+  const code=WORDS[Math.floor(Math.random()*WORDS.length)]+"-"+String(Math.floor(1000+Math.random()*9000));
+  const bday=document.getElementById("cr-bday").value||"";
+  const prof={id,name,avatar:selAv,age:selAge,code,bday,xp:0,streak:1,
+    lessonsCompleted:0,completedLessons:[],repeatQueue:[],
+    weeklyXP:[0,0,0,0,0,0,0],dailyCount:0,dailyLastDate:"",
+    _lastPerfect:false,ownedAvatars:[selAv],createdAt:new Date().toISOString()};
   try{
     await fbSet(id,prof);await fbCodeSet(code,id);
     S.prof=prof;lsSave(prof);loading(false);
-    toast(`Profil erstellt! Dein Code: ${code} 🎉`);renderHome();showScreen('sc-home');
-  }catch(e){loading(false);toast('Firebase nicht konfiguriert – Anleitung lesen! ⚠️');console.error(e)}
+    toast(`Profil erstellt! Code: ${code} 🎉`);renderHome();showScreen("sc-home");
+  }catch(e){loading(false);toast("Firebase nicht konfiguriert ⚠️");console.error(e)}
 }
 window.createProfile=createProfile;
 
 async function joinCode(){
-  const raw = (document.getElementById('code-full').value||'').trim().toUpperCase();
-  if(!raw||!raw.includes('-')){toast('Bitte vollständigen Code eingeben! (z.B. FUCHS-8429) 🔑');return}
-  const parts = raw.split('-');
-  if(parts.length!==2||!parts[0]||!parts[1]){toast('Format: WORT-ZAHL (z.B. FUCHS-8429) 🔑');return}
-  const code = raw;
-  loading(true,'Profil wird geladen…');await fbWait();
+  const raw=(document.getElementById("code-full").value||"").trim().toUpperCase();
+  if(!raw||!raw.includes("-")){toast("Bitte vollständigen Code eingeben! 🔑");return}
+  loading(true,"Profil wird geladen…");await fbWait();
   try{
-    const prof=await fbCode(code);
-    if(!prof){loading(false);toast('Code nicht gefunden. Nochmal prüfen! 🔍');return}
+    const prof=await fbCode(raw);
+    if(!prof){loading(false);toast("Code nicht gefunden 🔍");return}
     S.prof=prof;lsSave(prof);loading(false);
-    toast(`Willkommen zurück, ${prof.name}! 👋`);
-    renderHome();showScreen('sc-home');
-  }catch(e){loading(false);toast('Verbindungsfehler – Firebase konfiguriert? ⚠️');console.error(e)}
+    toast(`Willkommen zurück, ${prof.name}! 👋`);renderHome();showScreen("sc-home");
+  }catch(e){loading(false);toast("Verbindungsfehler ⚠️");console.error(e)}
 }
 window.joinCode=joinCode;
 
-// ── home ───────────────────────────────────────────────────
-function renderHome(){
-  const p=S.prof,cfg=ACF[p.age];
-  document.getElementById('tb-av').textContent=p.avatar;
-  document.getElementById('tb-name').textContent=p.name;
-  document.getElementById('xp-disp').textContent=p.xp;
-  document.getElementById('age-tag').textContent=cfg.em+' '+cfg.label;
-  document.getElementById('age-tag').style.background=cfg.col;
-  document.getElementById('streak-n').textContent=p.streak;
-  const gs={mini:['Hallo, kleiner Stern! ⭐','Bereit zum Spielen? 🎮'],junior:['Hey '+p.name+'! 🦊','Wissensdurst? 📚'],mittel:['Bereit? 🦁','Was lernst du heute?'],profi:['Hallo, '+p.name+'! 🦅','Zeit durchzustarten? 🚀']};
-  const a=gs[p.age];
-  document.getElementById('greet').textContent=a[Math.floor(Math.random()*a.length)];
-  document.getElementById('greet-s').textContent=cfg.label+' ('+cfg.range+')';
-  const gr=document.getElementById('sub-grid');gr.innerHTML='';
-  SUBS[p.age].forEach(sub=>{
-    const done=(p.completedLessons||[]).filter(l=>l.startsWith(sub.id+'_')).length;
-    const pct=Math.round((done/sub.les)*100);
-    const c=document.createElement('div');c.className='sub-card';c.style.background=sub.bg;
-    c.innerHTML=`<span class="si">${sub.icon}</span><div class="sn">${sub.name}</div><div class="sp"><div class="spb" style="width:${pct}%"></div></div>`;
-    c.onclick=()=>openSub(sub);gr.appendChild(c);
+// ── edit profile ───────────────────────────────────────────
+function setupEdit(){
+  const p=S.prof;
+  editAv=p.avatar;editAge=p.age;
+  const g=document.getElementById("edit-av-grid");g.innerHTML="";
+  AVATARS.slice(0,10).forEach(a=>{const d=document.createElement("div");d.className="av-opt"+(a===editAv?" sel":"");d.textContent=a;d.onclick=()=>{editAv=a;g.querySelectorAll(".av-opt").forEach(x=>x.classList.remove("sel"));d.classList.add("sel")};g.appendChild(d)});
+  const ag=document.getElementById("edit-age-grid");ag.innerHTML="";
+  Object.entries(ACF).forEach(([k,c])=>{const d=document.createElement("div");d.className="age-opt"+(k===editAge?" sel":"");d.dataset.age=k;d.innerHTML=`<span class="emo">${c.em}</span><div class="lbl2">${c.label}</div><div class="rng">${c.range}</div>`;d.onclick=()=>{editAge=k;ag.querySelectorAll(".age-opt").forEach(x=>x.classList.remove("sel"));d.classList.add("sel")};ag.appendChild(d)});
+  document.getElementById("edit-name").value=p.name;
+  document.getElementById("edit-bday").value=p.bday||"";
+  document.getElementById("edit-age-suggestion").style.display="none";
+}
+window.setupEdit=setupEdit;
+
+async function saveEdit(){
+  const name=document.getElementById("edit-name").value.trim();
+  if(!name){toast("Name darf nicht leer sein! 👆");return}
+  S.prof.name=name;S.prof.avatar=editAv;S.prof.age=editAge;
+  S.prof.bday=document.getElementById("edit-bday").value||"";
+  loading(true,"Wird gespeichert…");
+  try{await fbWait();await fbUpdate(S.prof);}catch(e){console.warn(e)}
+  lsSave(S.prof);loading(false);toast("Profil aktualisiert! ✅");
+  renderPV();showScreen("sc-pv");
+}
+window.saveEdit=saveEdit;
+
+// ── splash ─────────────────────────────────────────────────
+function renderSplash(){
+  const saved=lsGet();
+  const list=document.getElementById("prof-list");
+  const div=document.getElementById("divider");
+  list.innerHTML="";
+  div.style.display=saved.length?"flex":"none";
+  saved.forEach(p=>{
+    const cfg=ACF[p.age]||ACF.junior;
+    const c=document.createElement("div");c.className="prof-card";
+    c.innerHTML=`<div class="prof-av" style="background:${cfg.col}22">${p.avatar}</div><div style="flex:1"><div class="prof-name">${p.name}</div><div class="prof-meta">${cfg.em} ${cfg.label} · ${cfg.range}</div></div><div class="prof-code">${p.code}</div>`;
+    c.onclick=()=>loadLocal(p);list.appendChild(c);
   });
 }
+async function loadLocal(local){
+  loading(true,"Lädt…");await fbWait();
+  try{const fresh=await fbGet(local.id);S.prof=fresh||local;}catch{S.prof=local}
+  lsSave(S.prof);loading(false);checkStreak();renderHome();showScreen("sc-home");
+}
+
+// ── streak check ───────────────────────────────────────────
+function checkStreak(){
+  const p=S.prof;if(!p)return;
+  const today=new Date().toDateString();
+  const last=p.lastActive||"";
+  const yesterday=new Date(Date.now()-86400000).toDateString();
+  if(last===today)return;
+  if(last===yesterday)p.streak=(p.streak||1)+1;
+  else if(last!==today)p.streak=1;
+  p.lastActive=today;
+  // Update weekly XP array – shift if needed
+  if(!p.weeklyXP||p.weeklyXP.length!==7)p.weeklyXP=[0,0,0,0,0,0,0];
+  const dow=new Date().getDay();
+  if(last!==today){p.weeklyXP[dow]=p.weeklyXP[dow]||0;}
+}
+
+// ── home ───────────────────────────────────────────────────
+function renderHome(){
+  const p=S.prof;const cfg=ACF[p.age];
+  document.getElementById("tb-av").textContent=p.avatar;
+  document.getElementById("tb-name").textContent=p.name;
+  document.getElementById("xp-disp").textContent=p.xp;
+  document.getElementById("age-tag").textContent=cfg.em+" "+cfg.label;
+  document.getElementById("age-tag").style.background=cfg.col;
+  document.getElementById("streak-n").textContent=p.streak||1;
+  const lang=localStorage.getItem("lw_lang")||"de";
+  const gs=t("greeting_"+p.age);
+  document.getElementById("greet").textContent=gs[Math.floor(Math.random()*gs.length)];
+  document.getElementById("greet-s").textContent=cfg.label+" ("+cfg.range+")";
+  // Daily challenge
+  const today=new Date().toDateString();
+  const dailyDone=(p.dailyLastDate===today);
+  const db=document.getElementById("daily-banner");
+  db.classList.toggle("daily-done",dailyDone);
+  document.getElementById("daily-txt").textContent=dailyDone?t("daily_done"):t("daily_sub");
+  document.getElementById("daily-btn-txt").textContent=dailyDone?"✅":(lang==="en"?"Start →":"Starten →");
+  db.onclick=dailyDone?null:startDaily;
+  // Subjects
+  const gr=document.getElementById("sub-grid");gr.innerHTML="";
+  SUBS[p.age].forEach(sub=>{
+    const done=(p.completedLessons||[]).filter(l=>l.startsWith(sub.id+"_")).length;
+    const pct=Math.round((done/sub.les)*100);
+    const hasRepeat=(p.repeatQueue||[]).some(r=>r.startsWith(sub.id+"_"));
+    const c=document.createElement("div");c.className="sub-card";c.style.background=sub.bg;
+    c.innerHTML=`<span class="si">${sub.icon}</span><div class="sn">${sub.name}${hasRepeat?'<span class="repeat-badge">↩</span>':""}</div><div class="sp"><div class="spb" style="width:${pct}%"></div></div>`;
+    c.onclick=()=>openSub(sub);gr.appendChild(c);
+  });
+  // difficulty update
+  const totalLessons=p.lessonsCompleted||0;
+  S.diffLevel=totalLessons>=30?3:totalLessons>=15?2:1;
+}
+
+// ── daily challenge ────────────────────────────────────────
+async function startDaily(){
+  const p=S.prof;
+  const today=new Date().toDateString();
+  if(p.dailyLastDate===today){toast("Tagesaufgabe bereits erledigt! ✅");return}
+  // Pick random subject
+  const subs=SUBS[p.age];
+  const sub=subs[Math.floor(Math.random()*subs.length)];
+  S.isDaily=true;
+  S.currentLesson={sub,index:-1,title:"⚡ Tagesaufgabe"};
+  S.qi=0;S.ok=0;S.ng=0;S.qs=[];S.ans=false;
+  loading(true,"Tagesaufgabe wird geladen…");showScreen("sc-quiz");
+  try{S.qs=(await genQs(sub,-1,"Tagesaufgabe – gemischte Fragen")).slice(0,3)}
+  catch{S.qs=fbQs("Tagesaufgabe").slice(0,3)}
+  loading(false);renderQ();
+}
+window.startDaily=startDaily;
 
 // ── lessons ────────────────────────────────────────────────
 function openSub(sub){
-  S.sub=sub;
-  document.getElementById('les-title').textContent=sub.icon+' '+sub.name;
-  const list=document.getElementById('les-list');list.innerHTML='';
+  S.sub=sub;S.isDaily=false;
+  document.getElementById("les-title").textContent=sub.icon+" "+sub.name;
+  const list=document.getElementById("les-list");list.innerHTML="";
   const names=(LN[S.prof.age]||{})[sub.id]||[];
   const xpPer=Math.round(30*ACF[S.prof.age].xm);
+  // Repeat queue section
+  const rq=(S.prof.repeatQueue||[]).filter(k=>k.startsWith(sub.id+"_"));
+  if(rq.length>0){
+    const div=document.createElement("div");
+    div.style.cssText="background:linear-gradient(135deg,#ff4d4d,#ff8fab);border-radius:14px;padding:13px 15px;margin-bottom:14px;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent";
+    div.innerHTML=`<div style="font-family:'Baloo 2',cursive;font-size:15px;font-weight:800">🔁 Wiederholung (${rq.length} Fragen)</div><div style="font-size:12px;opacity:.85;margin-top:2px">Falsch beantwortet – jetzt wiederholen!</div>`;
+    div.onclick=()=>startRepeat(sub,rq);
+    list.appendChild(div);
+  }
   for(let i=0;i<sub.les;i++){
     const title=names[i]||`Lektion ${i+1}`;
-    const key=`${sub.id}_${i}`;
+    const key=sub.id+"_"+i;
     const done=(S.prof.completedLessons||[]).includes(key);
-    const c=document.createElement('div');c.className='les-card';
-    c.innerHTML=`<div class="les-num" style="background:${sub.col}">${i+1}</div><div class="les-info"><div class="les-t">${title}</div><div class="les-m">5 Fragen · ${xpPer} XP</div></div>${done?'<div class="les-done">✅</div>':`<div class="les-xp">+${xpPer} XP</div>`}`;
+    const inRepeat=(S.prof.repeatQueue||[]).includes(key);
+    const c=document.createElement("div");c.className="les-card";
+    c.innerHTML=`<div class="les-num" style="background:${sub.col}">${i+1}</div><div class="les-info"><div class="les-t">${title}${inRepeat?'<span class="repeat-badge">↩</span>':""}</div><div class="les-m">5 Fragen · ${xpPer} XP</div></div>${done?'<div class="les-done">✅</div>':`<div class="les-xp">+${xpPer} XP</div>`}`;
     const idx=i;c.onclick=()=>startLesson(sub,idx,title);list.appendChild(c);
   }
-  showScreen('sc-lessons');
+  showScreen("sc-lessons");
+}
+
+async function startRepeat(sub,keys){
+  S.lesson={sub,index:"repeat",title:"🔁 Wiederholung"};
+  S.qi=0;S.ok=0;S.ng=0;S.qs=[];S.ans=false;S.isDaily=false;
+  loading(true,"Wiederholungsfragen werden geladen…");showScreen("sc-quiz");
+  const title="Wiederholung falsch beantworteter Fragen aus "+sub.name;
+  try{S.qs=await genQs(sub,"repeat",title)}catch{S.qs=fbQs(title)}
+  loading(false);renderQ();
 }
 
 // ── quiz ───────────────────────────────────────────────────
 async function startLesson(sub,index,title){
-  S.lesson={sub,index,title};S.qi=0;S.ok=0;S.ng=0;S.qs=[];S.ans=false;
-  const hasKey = !!getApiKey();
-  loading(true, hasKey ? 'KI erstellt deine Aufgaben…' : 'Fragen werden geladen…');
-  showScreen('sc-quiz');
+  S.lesson={sub,index,title};S.qi=0;S.ok=0;S.ng=0;S.qs=[];S.ans=false;S.isDaily=false;
+  const hasKey=!!getApiKey();
+  loading(true,hasKey?"KI erstellt deine Aufgaben…":"Fragen werden geladen…");
+  showScreen("sc-quiz");
   try{S.qs=await genQs(sub,index,title)}catch{S.qs=fbQs(title)}
   loading(false);renderQ();
 }
 
 async function genQs(sub,index,title){
-  const apiKey = getApiKey();
-  if(!apiKey) throw new Error('Kein API-Key');
+  const apiKey=getApiKey();if(!apiKey)throw new Error("kein key");
   const cfg=ACF[S.prof.age];
-  const prompt=`Du bist Lehrexperte für Kinder. Erstelle genau 5 abwechslungsreiche Lernfragen auf Deutsch:
+  const diffMap={1:"normal (Lehrplan-Standard)",2:"schwerer (anspruchsvoller)",3:"sehr schwer (Experten-Niveau)"};
+  const diffTxt=diffMap[S.diffLevel]||diffMap[1];
+  const lang=localStorage.getItem("lw_lang")||"de";
+  const prompt=`Du bist Lehrexperte für Kinder. Erstelle genau 5 abwechslungsreiche Lernfragen ${lang==="en"?"in English":"auf Deutsch"}:
 Altersgruppe: ${cfg.label} (${cfg.range})
 Fach: ${sub.name}
 Lektion: ${title}
-Schwierigkeit exakt anpassen:
-- Mini (3-5): Sehr einfach, 2 Antworten
-- Junior (6-8): Einfach, spielerisch, 4 Antworten
-- Mittel (9-12): Mittelschwer, schulrelevant, 4 Antworten
-- Profi (13-16): Anspruchsvoll, 4 Antworten
+Schwierigkeit: ${diffTxt}
 Antworte NUR mit JSON-Array (kein Markdown):
 [{"type":"multiple","question":"...","illustration":"Emoji","answers":["A","B","C","D"],"correct":0,"explanation":"Kurze Erklärung"}]`;
-  const r=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-access':'true'
-    },
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})
+  const r=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-api-key":apiKey,
+      "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1200,messages:[{role:"user",content:prompt}]})
   });
-  if(!r.ok) throw new Error('API '+r.status);
+  if(!r.ok)throw new Error("api "+r.status);
   const d=await r.json();
-  return JSON.parse(d.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim());
+  return JSON.parse(d.content.map(b=>b.text||"").join("").replace(/```json|```/g,"").trim());
 }
-// ── Vollständige Fallback-Fragendatenbank ─────────────────
-// Struktur: FALLBACK_DB[age][subjectId][lessonIndex] = [5 Fragen]
-const FALLBACK_DB = {
-  mini: {
-    farben: [
-      // Lektion 0: Rot, Blau & Gelb
-      [
-        {type:'multiple',question:'Welche Farbe hat eine reife Tomate?',illustration:'🍅',answers:['Blau','Rot','Grün','Gelb'],correct:1,explanation:'Eine reife Tomate ist rot! 🍅'},
-        {type:'multiple',question:'Welche Farbe hat der Himmel an einem schönen Tag?',illustration:'☀️',answers:['Rot','Grün','Blau','Orange'],correct:2,explanation:'Der Himmel ist blau! ☀️'},
-        {type:'multiple',question:'Welche Farbe hat eine Banane?',illustration:'🍌',answers:['Rot','Blau','Lila','Gelb'],correct:3,explanation:'Eine Banane ist gelb! 🍌'},
-        {type:'truefalse',question:'Eine Erdbeere ist rot.',illustration:'🍓',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Erdbeeren sind schön rot. 🍓'},
-        {type:'multiple',question:'Was ist BLAU?',illustration:'🎨',answers:['Die Sonne','Das Meer','Ein Apfel','Gras'],correct:1,explanation:'Das Meer ist blau! 🌊'},
-      ],
-      // Lektion 1: Grün & Orange
-      [
-        {type:'multiple',question:'Welche Farbe hat Gras?',illustration:'🌿',answers:['Gelb','Blau','Grün','Rot'],correct:2,explanation:'Gras ist grün! 🌿'},
-        {type:'multiple',question:'Welche Farbe hat eine Orange?',illustration:'🍊',answers:['Grün','Blau','Rot','Orange'],correct:3,explanation:'Eine Orange ist orange – genau wie ihr Name! 🍊'},
-        {type:'truefalse',question:'Ein Frosch ist grün.',illustration:'🐸',answers:['Richtig','Falsch'],correct:0,explanation:'Ja, viele Frösche sind grün! 🐸'},
-        {type:'multiple',question:'Was ist GRÜN?',illustration:'🎨',answers:['Die Sonne','Ein Kürbis','Ein Baum','Der Mond'],correct:2,explanation:'Bäume sind grün! 🌳'},
-        {type:'truefalse',question:'Eine Karotte ist orange.',illustration:'🥕',answers:['Richtig','Falsch'],correct:0,explanation:'Genau! Karotten sind orange. 🥕'},
-      ],
-      // Lektion 2: Mischen von Farben
-      [
-        {type:'multiple',question:'Was entsteht, wenn man Blau und Gelb mischt?',illustration:'🎨',answers:['Rot','Orange','Grün','Lila'],correct:2,explanation:'Blau + Gelb = Grün! 🟢'},
-        {type:'multiple',question:'Was entsteht, wenn man Rot und Gelb mischt?',illustration:'🎨',answers:['Blau','Orange','Grün','Lila'],correct:1,explanation:'Rot + Gelb = Orange! 🟠'},
-        {type:'multiple',question:'Was entsteht, wenn man Rot und Blau mischt?',illustration:'🎨',answers:['Grün','Orange','Gelb','Lila'],correct:3,explanation:'Rot + Blau = Lila! 🟣'},
-        {type:'truefalse',question:'Wenn man alle Farben mischt, entsteht ein sehr dunkles Braun.',illustration:'🎨',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Viele Farben gemischt werden dunkel braun.'},
-        {type:'multiple',question:'Welche zwei Farben muss man mischen, um Grün zu bekommen?',illustration:'🖌️',answers:['Rot + Blau','Blau + Gelb','Rot + Gelb','Blau + Weiß'],correct:1,explanation:'Blau und Gelb ergeben Grün! 🌿'},
-      ],
-      // Lektion 3: Farben im Alltag
-      [
-        {type:'multiple',question:'Welche Farbe bedeutet bei der Ampel STOPP?',illustration:'🚦',answers:['Grün','Gelb','Blau','Rot'],correct:3,explanation:'Rot bedeutet Stopp! 🛑'},
-        {type:'multiple',question:'Welche Farbe bedeutet bei der Ampel GEHEN?',illustration:'🚦',answers:['Rot','Blau','Grün','Orange'],correct:2,explanation:'Grün bedeutet: Gehen ist sicher! ✅'},
-        {type:'multiple',question:'Welche Farbe hat ein Feuerwehrauto?',illustration:'🚒',answers:['Blau','Grün','Gelb','Rot'],correct:3,explanation:'Feuerwehrautos sind rot! 🚒'},
-        {type:'multiple',question:'Welche Farbe hat der Krankenwagen oft?',illustration:'🚑',answers:['Rot','Weiß','Grün','Blau'],correct:1,explanation:'Krankenwagen sind oft weiß mit bunten Streifen! 🚑'},
-        {type:'truefalse',question:'Das Polizeiauto in Deutschland ist blau und silber.',illustration:'🚔',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Polizeiautos sind blau-silber. 🚔'},
-      ],
-    ],
-    tiere: [
-      // Lektion 0: Haustiere
-      [
-        {type:'multiple',question:'Welches Tier bellt?',illustration:'🐕',answers:['Katze','Hund','Fisch','Vogel'],correct:1,explanation:'Hunde bellen – Wau Wau! 🐕'},
-        {type:'multiple',question:'Was frisst eine Katze am liebsten?',illustration:'🐱',answers:['Karotten','Brot','Fisch','Äpfel'],correct:2,explanation:'Katzen mögen Fisch! 🐟'},
-        {type:'truefalse',question:'Ein Goldfisch lebt im Wasser.',illustration:'🐠',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Fische brauchen Wasser zum Leben. 🐠'},
-        {type:'multiple',question:'Welches Tier schnurrt?',illustration:'😺',answers:['Hund','Hamster','Katze','Vogel'],correct:2,explanation:'Katzen schnurren wenn sie glücklich sind! 😺'},
-        {type:'multiple',question:'Was braucht ein Hund jeden Tag?',illustration:'🦮',answers:['Einen Spaziergang','Einen Computer','Einen Fernseher','Bücher'],correct:0,explanation:'Hunde brauchen täglichen Auslauf! 🦮'},
-      ],
-      // Lektion 1: Bauernhoftiere
-      [
-        {type:'multiple',question:'Welches Tier gibt uns Milch?',illustration:'🐄',answers:['Huhn','Kuh','Pferd','Schwein'],correct:1,explanation:'Die Kuh gibt uns Milch! 🐄'},
-        {type:'multiple',question:'Was macht ein Hahn morgens?',illustration:'🐓',answers:['Schlafen','Krähen','Schwimmen','Bellen'],correct:1,explanation:'Der Hahn kräht morgens! 🐓'},
-        {type:'multiple',question:'Welches Tier legt Eier auf dem Bauernhof?',illustration:'🥚',answers:['Kuh','Pferd','Huhn','Schaf'],correct:2,explanation:'Hühner legen Eier! 🥚'},
-        {type:'truefalse',question:'Schafe geben uns Wolle für warme Kleidung.',illustration:'🐑',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Aus Schafwolle macht man Pullover und Socken. 🧶'},
-        {type:'multiple',question:'Wie heißt das Baby einer Kuh?',illustration:'🐮',answers:['Ferkel','Küken','Kalb','Fohlen'],correct:2,explanation:'Das Baby der Kuh heißt Kalb! 🐮'},
-      ],
-      // Lektion 2: Wildtiere
-      [
-        {type:'multiple',question:'Welches Tier ist das größte Landtier der Welt?',illustration:'🐘',answers:['Löwe','Elefant','Giraffe','Nashorn'],correct:1,explanation:'Der Elefant ist das größte Landtier! 🐘'},
-        {type:'multiple',question:'Welches Tier hat einen sehr langen Hals?',illustration:'🦒',answers:['Zebra','Elefant','Giraffe','Löwe'],correct:2,explanation:'Die Giraffe hat den längsten Hals! 🦒'},
-        {type:'truefalse',question:'Ein Löwe ist ein Raubtier.',illustration:'🦁',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Löwen jagen andere Tiere. 🦁'},
-        {type:'multiple',question:'Wo lebt ein Pinguin?',illustration:'🐧',answers:['In der Wüste','In der Arktis/Antarktis','Im Regenwald','Im Meer'],correct:1,explanation:'Pinguine leben in sehr kalten Gegenden! 🐧'},
-        {type:'multiple',question:'Was fressen Pandas?',illustration:'🐼',answers:['Fleisch','Fisch','Bambus','Äpfel'],correct:2,explanation:'Pandas fressen fast nur Bambus! 🎋'},
-      ],
-      // Lektion 3: Wassertiere
-      [
-        {type:'multiple',question:'Welches Tier ist das größte Tier der Welt?',illustration:'🐋',answers:['Hai','Delfin','Blauwal','Oktopus'],correct:2,explanation:'Der Blauwal ist das größte Tier auf der Erde! 🐋'},
-        {type:'truefalse',question:'Delfine sind Fische.',illustration:'🐬',answers:['Richtig','Falsch'],correct:1,explanation:'Nein! Delfine sind Säugetiere, keine Fische. 🐬'},
-        {type:'multiple',question:'Wie viele Arme hat ein Oktopus?',illustration:'🐙',answers:['4','6','8','10'],correct:2,explanation:'Ein Oktopus hat 8 Arme! 🐙'},
-        {type:'multiple',question:'Was hat ein Fisch statt Lungen?',illustration:'🐟',answers:['Flossen','Kiemen','Schuppen','Flügel'],correct:1,explanation:'Fische atmen durch Kiemen! 🐟'},
-        {type:'truefalse',question:'Haie sind gefährliche Raubtiere.',illustration:'🦈',answers:['Richtig','Falsch'],correct:0,explanation:'Ja, Haie sind Raubtiere – aber sie greifen Menschen selten an. 🦈'},
-      ],
-      // Lektion 4: Vögel
-      [
-        {type:'multiple',question:'Welcher Vogel kann NICHT fliegen?',illustration:'🐧',answers:['Adler','Pinguin','Schwalbe','Spatz'],correct:1,explanation:'Pinguine können nicht fliegen! 🐧'},
-        {type:'multiple',question:'Was baut ein Vogel für seine Eier?',illustration:'🪺',answers:['Eine Höhle','Ein Nest','Ein Loch','Ein Haus'],correct:1,explanation:'Vögel bauen Nester! 🪺'},
-        {type:'truefalse',question:'Eulen sind nachtaktiv – sie schlafen tagsüber.',illustration:'🦉',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Eulen sind nachts aktiv und schlafen am Tag. 🦉'},
-        {type:'multiple',question:'Welcher Vogel ist für seinen bunten Schwanz bekannt?',illustration:'🦚',answers:['Spatz','Pfau','Amsel','Schwalbe'],correct:1,explanation:'Der Pfau hat einen wunderschönen Schwanz! 🦚'},
-        {type:'multiple',question:'Womit fliegen Vögel?',illustration:'🐦',answers:['Mit Flossen','Mit den Beinen','Mit Flügeln','Mit dem Schwanz'],correct:2,explanation:'Vögel fliegen mit ihren Flügeln! 🐦'},
-      ],
-    ],
-    zahlen: [
-      // Lektion 0: Zahlen 1–3
-      [
-        {type:'multiple',question:'Wie viele Augen hat ein Mensch?',illustration:'👀',answers:['1','2','3','4'],correct:1,explanation:'Ein Mensch hat 2 Augen! 👀'},
-        {type:'multiple',question:'Wie viele Ohren hat ein Hase?',illustration:'🐰',answers:['1','3','2','4'],correct:2,explanation:'Ein Hase hat 2 Ohren! 🐰'},
-        {type:'multiple',question:'Zähle die Äpfel: 🍎🍎🍎 – Wie viele sind es?',illustration:'🍎',answers:['1','2','3','4'],correct:2,explanation:'Es sind 3 Äpfel! 🍎🍎🍎'},
-        {type:'truefalse',question:'1 + 1 = 2',illustration:'➕',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Eins plus eins ergibt zwei. ✌️'},
-        {type:'multiple',question:'Was kommt nach der Zahl 2?',illustration:'🔢',answers:['1','4','2','3'],correct:3,explanation:'Nach der 2 kommt die 3! 3️⃣'},
-      ],
-      // Lektion 1: Zahlen 4–6
-      [
-        {type:'multiple',question:'Wie viele Beine hat ein Hund?',illustration:'🐕',answers:['2','6','4','8'],correct:2,explanation:'Ein Hund hat 4 Beine! 🐕'},
-        {type:'multiple',question:'Zähle: 🌟🌟🌟🌟🌟 – Wie viele Sterne sind das?',illustration:'⭐',answers:['4','5','6','3'],correct:1,explanation:'Es sind 5 Sterne! ⭐⭐⭐⭐⭐'},
-        {type:'multiple',question:'Was kommt nach der 5?',illustration:'🔢',answers:['4','7','6','8'],correct:2,explanation:'Nach der 5 kommt die 6! 6️⃣'},
-        {type:'truefalse',question:'4 ist mehr als 6.',illustration:'🔢',answers:['Richtig','Falsch'],correct:1,explanation:'Nein! 6 ist größer als 4. 6 > 4'},
-        {type:'multiple',question:'Wie viele Finger hat eine Hand?',illustration:'✋',answers:['4','6','3','5'],correct:3,explanation:'Eine Hand hat 5 Finger! ✋'},
-      ],
-      // Lektion 2: Zahlen 7–10
-      [
-        {type:'multiple',question:'Wie viele Tage hat eine Woche?',illustration:'📅',answers:['5','6','8','7'],correct:3,explanation:'Eine Woche hat 7 Tage! 📅'},
-        {type:'multiple',question:'Zähle: 🍭🍭🍭🍭🍭🍭🍭🍭 – Wie viele?',illustration:'🍭',answers:['7','9','8','6'],correct:2,explanation:'Es sind 8 Bonbons! 🍭'},
-        {type:'multiple',question:'Was kommt nach der 9?',illustration:'🔢',answers:['8','11','10','7'],correct:2,explanation:'Nach der 9 kommt die 10! 🔟'},
-        {type:'truefalse',question:'7 + 3 = 10',illustration:'➕',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Sieben plus drei ergibt zehn. 🔟'},
-        {type:'multiple',question:'Wie viele Finger haben beide Hände zusammen?',illustration:'👐',answers:['8','10','9','6'],correct:1,explanation:'Beide Hände haben zusammen 10 Finger! 👐'},
-      ],
-      // Lektion 3: Zählen üben
-      [
-        {type:'multiple',question:'Welche Zahl ist die größte?',illustration:'🔢',answers:['3','7','5','9'],correct:3,explanation:'9 ist die größte Zahl in dieser Auswahl! 9️⃣'},
-        {type:'multiple',question:'Welche Zahl ist die kleinste?',illustration:'🔢',answers:['8','4','2','6'],correct:2,explanation:'2 ist die kleinste Zahl! 2️⃣'},
-        {type:'multiple',question:'Was ergibt 3 + 2?',illustration:'➕',answers:['4','6','5','7'],correct:2,explanation:'3 + 2 = 5! ✅'},
-        {type:'truefalse',question:'10 ist die größte einstellige Zahl.',illustration:'🔢',answers:['Richtig','Falsch'],correct:1,explanation:'Nein! 9 ist die größte einstellige Zahl. 10 hat schon zwei Stellen.'},
-        {type:'multiple',question:'Wie viel ist 5 – 2?',illustration:'➖',answers:['2','4','3','1'],correct:2,explanation:'5 minus 2 ergibt 3! ✅'},
-      ],
-    ],
-    buchstaben: [
-      // Lektion 0: A, B, C
-      [
-        {type:'multiple',question:'Welcher Buchstabe kommt zuerst im Alphabet?',illustration:'🔤',answers:['B','C','A','D'],correct:2,explanation:'A ist der erste Buchstabe im Alphabet! 🔤'},
-        {type:'multiple',question:'Womit beginnt das Wort „Apfel"?',illustration:'🍎',answers:['B','A','C','E'],correct:1,explanation:'Apfel beginnt mit A! 🍎'},
-        {type:'multiple',question:'Womit beginnt das Wort „Ball"?',illustration:'⚽',answers:['A','C','D','B'],correct:3,explanation:'Ball beginnt mit B! ⚽'},
-        {type:'truefalse',question:'Das C klingt manchmal wie ein K.',illustration:'🔤',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Wie in „Computer" oder „Clown". 🤡'},
-        {type:'multiple',question:'Womit beginnt das Wort „Clown"?',illustration:'🤡',answers:['A','B','C','D'],correct:2,explanation:'Clown beginnt mit C! 🤡'},
-      ],
-      // Lektion 1: D, E, F
-      [
-        {type:'multiple',question:'Womit beginnt das Wort „Dach"?',illustration:'🏠',answers:['E','F','D','B'],correct:2,explanation:'Dach beginnt mit D! 🏠'},
-        {type:'multiple',question:'Womit beginnt das Wort „Elefant"?',illustration:'🐘',answers:['A','E','F','I'],correct:1,explanation:'Elefant beginnt mit E! 🐘'},
-        {type:'multiple',question:'Womit beginnt das Wort „Fisch"?',illustration:'🐟',answers:['E','D','G','F'],correct:3,explanation:'Fisch beginnt mit F! 🐟'},
-        {type:'truefalse',question:'Das Wort „Ente" beginnt mit E.',illustration:'🦆',answers:['Richtig','Falsch'],correct:0,explanation:'Richtig! E-nte beginnt mit E. 🦆'},
-        {type:'multiple',question:'Welcher Buchstabe fehlt? A B C _ E F',illustration:'🔤',answers:['G','D','H','B'],correct:1,explanation:'D fehlt! A B C D E F – so ist das Alphabet. 🔤'},
-      ],
-      // Lektion 2: G, H, I
-      [
-        {type:'multiple',question:'Womit beginnt das Wort „Hund"?',illustration:'🐕',answers:['G','I','J','H'],correct:3,explanation:'Hund beginnt mit H! 🐕'},
-        {type:'multiple',question:'Womit beginnt das Wort „Igel"?',illustration:'🦔',answers:['H','J','I','G'],correct:2,explanation:'Igel beginnt mit I! 🦔'},
-        {type:'multiple',question:'Womit beginnt das Wort „Giraffe"?',illustration:'🦒',answers:['H','G','I','F'],correct:1,explanation:'Giraffe beginnt mit G! 🦒'},
-        {type:'truefalse',question:'Das Wort „Haus" beginnt mit H.',illustration:'🏠',answers:['Richtig','Falsch'],correct:0,explanation:'Richtig! H-aus beginnt mit H. 🏠'},
-        {type:'multiple',question:'Wie viele Buchstaben hat das Wort „Hi"?',illustration:'👋',answers:['3','4','1','2'],correct:3,explanation:'„Hi" hat 2 Buchstaben: H und I! 👋'},
-      ],
-      // Lektion 3: Mein Name
-      [
-        {type:'multiple',question:'Mit welchem Buchstaben beginnen Namen meistens?',illustration:'✍️',answers:['Kleinbuchstaben','Großbuchstaben','Zahlen','Punkten'],correct:1,explanation:'Namen beginnen immer mit einem Großbuchstaben! ✍️'},
-        {type:'truefalse',question:'Jeder Mensch hat einen Namen.',illustration:'👤',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Jeder Mensch hat einen Namen. 👤'},
-        {type:'multiple',question:'Womit beginnt der Name „Anna"?',illustration:'👧',answers:['E','A','O','I'],correct:1,explanation:'Anna beginnt mit A! 👧'},
-        {type:'multiple',question:'Wie schreibt man seinen Namen?',illustration:'✏️',answers:['Immer klein','Mit Großbuchstabe am Anfang','Nur in Großbuchstaben','Mit Zahlen'],correct:1,explanation:'Namen beginnen mit einem großen Anfangsbuchstaben! ✏️'},
-        {type:'truefalse',question:'Der Name „Max" hat 3 Buchstaben.',illustration:'🔤',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! M-a-x – das sind 3 Buchstaben. ✅'},
-      ],
-    ],
-    formen: [
-      // Lektion 0: Kreis & Quadrat
-      [
-        {type:'multiple',question:'Wie viele Ecken hat ein Quadrat?',illustration:'🟥',answers:['3','5','4','6'],correct:2,explanation:'Ein Quadrat hat 4 Ecken! 🟥'},
-        {type:'multiple',question:'Wie viele Ecken hat ein Kreis?',illustration:'⭕',answers:['1','4','3','0'],correct:3,explanation:'Ein Kreis hat keine Ecken! ⭕'},
-        {type:'multiple',question:'Welche Form ist rund?',illustration:'🎨',answers:['Quadrat','Dreieck','Kreis','Rechteck'],correct:2,explanation:'Der Kreis ist rund! ⭕'},
-        {type:'truefalse',question:'Ein Quadrat hat 4 gleich lange Seiten.',illustration:'🟦',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Alle vier Seiten eines Quadrats sind gleich lang. ✅'},
-        {type:'multiple',question:'Was hat die Form eines Kreises?',illustration:'🌕',answers:['Ein Buch','Ein Fenster','Der Mond','Eine Tür'],correct:2,explanation:'Der Vollmond hat die Form eines Kreises! 🌕'},
-      ],
-      // Lektion 1: Dreieck & Rechteck
-      [
-        {type:'multiple',question:'Wie viele Ecken hat ein Dreieck?',illustration:'🔺',answers:['4','2','3','5'],correct:2,explanation:'Ein Dreieck hat 3 Ecken! 🔺'},
-        {type:'multiple',question:'Was hat die Form eines Dreiecks?',illustration:'🎄',answers:['Ein Rad','Ein Fenster','Ein Weihnachtsbaum','Ein Ball'],correct:2,explanation:'Ein Weihnachtsbaum hat oft die Form eines Dreiecks! 🎄'},
-        {type:'truefalse',question:'Ein Rechteck hat 4 Ecken.',illustration:'▬',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Rechtecke haben 4 Ecken, wie Quadrate – aber die Seiten sind unterschiedlich lang. ✅'},
-        {type:'multiple',question:'Was hat die Form eines Rechtecks?',illustration:'📱',answers:['Ein Ball','Ein Smartphone','Ein Apfel','Eine Pizza'],correct:1,explanation:'Ein Smartphone hat meist die Form eines Rechtecks! 📱'},
-        {type:'multiple',question:'Wie viele Seiten hat ein Dreieck?',illustration:'🔺',answers:['4','2','5','3'],correct:3,explanation:'Ein Dreieck hat 3 Seiten! 🔺'},
-      ],
-      // Lektion 2: Formen in der Natur
-      [
-        {type:'multiple',question:'Welche Form hat die Sonne oft in Zeichnungen?',illustration:'☀️',answers:['Quadrat','Dreieck','Kreis','Rechteck'],correct:2,explanation:'Die Sonne wird oft als Kreis gezeichnet! ☀️'},
-        {type:'multiple',question:'Welche Form haben viele Blätter?',illustration:'🍃',answers:['Kreis','Oval/Ei-Form','Quadrat','Stern'],correct:1,explanation:'Viele Blätter haben eine ovale Form! 🍃'},
-        {type:'truefalse',question:'Schneeflocken haben oft eine sechseckige Form.',illustration:'❄️',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Schneeflocken haben wunderschöne Sechseck-Muster. ❄️'},
-        {type:'multiple',question:'Welche Form hat ein Ei?',illustration:'🥚',answers:['Quadrat','Kreis','Oval','Dreieck'],correct:2,explanation:'Ein Ei hat eine ovale Form! 🥚'},
-        {type:'multiple',question:'Welche Form haben die meisten Baumstämme?',illustration:'🌲',answers:['Quadrat','Dreieck','Rechteck','Kreis (rund)'],correct:3,explanation:'Baumstämme sind rund! 🌲'},
-      ],
-    ],
-    koerper: [
-      // Lektion 0: Kopf & Gesicht
-      [
-        {type:'multiple',question:'Womit siehst du?',illustration:'👀',answers:['Mit dem Ohr','Mit der Nase','Mit den Augen','Mit dem Mund'],correct:2,explanation:'Mit den Augen kannst du sehen! 👀'},
-        {type:'multiple',question:'Womit riechst du?',illustration:'👃',answers:['Mit den Augen','Mit der Nase','Mit dem Ohr','Mit dem Mund'],correct:1,explanation:'Mit der Nase kannst du riechen! 👃'},
-        {type:'multiple',question:'Womit hörst du?',illustration:'👂',answers:['Mit den Augen','Mit dem Mund','Mit den Ohren','Mit der Nase'],correct:2,explanation:'Mit den Ohren kannst du hören! 👂'},
-        {type:'truefalse',question:'Der Mund wird auch zum Sprechen benutzt.',illustration:'👄',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Mit dem Mund sprichst, isst und trinkst du. 👄'},
-        {type:'multiple',question:'Wie viele Augen hat ein Mensch normalerweise?',illustration:'👁️',answers:['1','3','4','2'],correct:3,explanation:'Ein Mensch hat 2 Augen! 👁️👁️'},
-      ],
-      // Lektion 1: Arme & Beine
-      [
-        {type:'multiple',question:'Wie viele Arme hat ein Mensch?',illustration:'💪',answers:['4','3','1','2'],correct:3,explanation:'Ein Mensch hat 2 Arme! 💪'},
-        {type:'multiple',question:'Womit greifst du Dinge auf?',illustration:'🤚',answers:['Mit den Füßen','Mit den Händen','Mit dem Kopf','Mit den Ohren'],correct:1,explanation:'Mit den Händen kannst du Dinge greifen! 🤚'},
-        {type:'multiple',question:'Wie viele Beine hat ein Mensch?',illustration:'🦵',answers:['4','3','2','1'],correct:2,explanation:'Ein Mensch hat 2 Beine! 🦵🦵'},
-        {type:'truefalse',question:'Menschen laufen auf zwei Beinen.',illustration:'🚶',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Menschen sind Zweibeiner. 🚶'},
-        {type:'multiple',question:'Was sind die Zehen?',illustration:'🦶',answers:['Finger an der Hand','Zähne im Mund','Finger am Fuß','Teile des Ohrs'],correct:2,explanation:'Zehen sind die „Finger" am Fuß! 🦶'},
-      ],
-      // Lektion 2: Innere Organe (einfach)
-      [
-        {type:'multiple',question:'Was pumpt das Blut durch deinen Körper?',illustration:'❤️',answers:['Die Lunge','Das Gehirn','Der Magen','Das Herz'],correct:3,explanation:'Das Herz pumpt das Blut durch deinen Körper! ❤️'},
-        {type:'multiple',question:'Womit atmest du?',illustration:'🫁',answers:['Mit dem Herz','Mit dem Magen','Mit der Lunge','Mit dem Gehirn'],correct:2,explanation:'Mit der Lunge atmest du! 🫁'},
-        {type:'multiple',question:'Was macht der Magen?',illustration:'😋',answers:['Pumpt Blut','Verdaut das Essen','Atmet Luft','Denkt nach'],correct:1,explanation:'Der Magen verdaut dein Essen! 😋'},
-        {type:'truefalse',question:'Das Herz hört niemals auf zu schlagen.',illustration:'💓',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Das Herz schlägt dein ganzes Leben lang – auch im Schlaf. 💓'},
-        {type:'multiple',question:'Womit denkst du nach?',illustration:'🧠',answers:['Mit dem Herz','Mit dem Magen','Mit der Lunge','Mit dem Gehirn'],correct:3,explanation:'Mit dem Gehirn kannst du denken, fühlen und träumen! 🧠'},
-      ],
-    ],
-  },
 
-  junior: {
-    mathe: [
-      [{type:'multiple',question:'Was ergibt 8 + 5?',illustration:'➕',answers:['11','12','13','14'],correct:2,explanation:'8 + 5 = 13! Zähle einfach weiter: 8…9,10,11,12,13'},
-       {type:'multiple',question:'Was ergibt 7 + 6?',illustration:'➕',answers:['11','12','13','14'],correct:2,explanation:'7 + 6 = 13! ✅'},
-       {type:'truefalse',question:'9 + 9 = 18',illustration:'➕',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! 9 + 9 = 18 ✅'},
-       {type:'multiple',question:'Was ergibt 6 + 8?',illustration:'➕',answers:['13','14','15','16'],correct:1,explanation:'6 + 8 = 14 ✅'},
-       {type:'multiple',question:'Was ergibt 9 + 7?',illustration:'➕',answers:['14','15','16','17'],correct:2,explanation:'9 + 7 = 16 ✅'}],
-      [{type:'multiple',question:'Was ergibt 15 – 7?',illustration:'➖',answers:['6','7','8','9'],correct:2,explanation:'15 – 7 = 8 ✅'},
-       {type:'multiple',question:'Was ergibt 13 – 6?',illustration:'➖',answers:['5','6','7','8'],correct:2,explanation:'13 – 6 = 7 ✅'},
-       {type:'truefalse',question:'20 – 8 = 12',illustration:'➖',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! 20 – 8 = 12 ✅'},
-       {type:'multiple',question:'Was ergibt 18 – 9?',illustration:'➖',answers:['7','8','9','10'],correct:2,explanation:'18 – 9 = 9 ✅'},
-       {type:'multiple',question:'Was ergibt 16 – 8?',illustration:'➖',answers:['6','7','8','9'],correct:2,explanation:'16 – 8 = 8 ✅'}],
-      [{type:'multiple',question:'Was ergibt 34 + 25?',illustration:'➕',answers:['57','58','59','60'],correct:2,explanation:'34 + 25 = 59 ✅'},
-       {type:'multiple',question:'Was ergibt 47 + 32?',illustration:'➕',answers:['77','78','79','80'],correct:2,explanation:'47 + 32 = 79 ✅'},
-       {type:'truefalse',question:'50 + 50 = 100',illustration:'➕',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! 50 + 50 = 100 ✅'},
-       {type:'multiple',question:'Was ergibt 63 + 28?',illustration:'➕',answers:['89','90','91','92'],correct:2,explanation:'63 + 28 = 91 ✅'},
-       {type:'multiple',question:'Was ergibt 45 + 37?',illustration:'➕',answers:['80','81','82','83'],correct:2,explanation:'45 + 37 = 82 ✅'}],
-      [{type:'multiple',question:'Was ergibt 80 – 35?',illustration:'➖',answers:['43','44','45','46'],correct:2,explanation:'80 – 35 = 45 ✅'},
-       {type:'multiple',question:'Was ergibt 92 – 47?',illustration:'➖',answers:['43','44','45','46'],correct:2,explanation:'92 – 47 = 45 ✅'},
-       {type:'truefalse',question:'100 – 60 = 40',illustration:'➖',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! 100 – 60 = 40 ✅'},
-       {type:'multiple',question:'Was ergibt 73 – 28?',illustration:'➖',answers:['43','44','45','46'],correct:2,explanation:'73 – 28 = 45 ✅'},
-       {type:'multiple',question:'Was ergibt 61 – 34?',illustration:'➖',answers:['25','26','27','28'],correct:2,explanation:'61 – 34 = 27 ✅'}],
-      [{type:'multiple',question:'Was ergibt 2 × 5?',illustration:'✖️',answers:['8','9','10','11'],correct:2,explanation:'2 × 5 = 10 ✅'},
-       {type:'multiple',question:'Was ergibt 5 × 4?',illustration:'✖️',answers:['18','19','20','21'],correct:2,explanation:'5 × 4 = 20 ✅'},
-       {type:'truefalse',question:'2 × 7 = 14',illustration:'✖️',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! 2 × 7 = 14 ✅'},
-       {type:'multiple',question:'Was ergibt 5 × 7?',illustration:'✖️',answers:['33','34','35','36'],correct:2,explanation:'5 × 7 = 35 ✅'},
-       {type:'multiple',question:'Was ergibt 2 × 9?',illustration:'✖️',answers:['16','17','18','19'],correct:2,explanation:'2 × 9 = 18 ✅'}],
-      [{type:'multiple',question:'Was ergibt 3 × 4?',illustration:'✖️',answers:['10','11','12','13'],correct:2,explanation:'3 × 4 = 12 ✅'},
-       {type:'multiple',question:'Was ergibt 4 × 6?',illustration:'✖️',answers:['22','23','24','25'],correct:2,explanation:'4 × 6 = 24 ✅'},
-       {type:'truefalse',question:'3 × 9 = 27',illustration:'✖️',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! 3 × 9 = 27 ✅'},
-       {type:'multiple',question:'Was ergibt 4 × 8?',illustration:'✖️',answers:['30','31','32','33'],correct:2,explanation:'4 × 8 = 32 ✅'},
-       {type:'multiple',question:'Was ergibt 3 × 7?',illustration:'✖️',answers:['19','20','21','22'],correct:2,explanation:'3 × 7 = 21 ✅'}],
-    ],
-    englisch: [
-      [{type:'multiple',question:'How do you say "Hallo" in English?',illustration:'👋',answers:['Bye','Hello','Thanks','Sorry'],correct:1,explanation:'"Hello" bedeutet Hallo! 👋'},
-       {type:'multiple',question:'How do you say "Auf Wiedersehen" in English?',illustration:'👋',answers:['Hello','Please','Goodbye','Thanks'],correct:2,explanation:'"Goodbye" bedeutet Auf Wiedersehen! 👋'},
-       {type:'truefalse',question:'"Good morning" bedeutet "Guten Morgen".',illustration:'🌅',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Good morning = Guten Morgen. 🌅'},
-       {type:'multiple',question:'Was bedeutet "Thank you"?',illustration:'🙏',answers:['Bitte','Entschuldigung','Danke','Hallo'],correct:2,explanation:'"Thank you" bedeutet Danke! 🙏'},
-       {type:'multiple',question:'Was bedeutet "Please"?',illustration:'🙏',answers:['Danke','Tschüss','Hallo','Bitte'],correct:3,explanation:'"Please" bedeutet Bitte! 🙏'}],
-      [{type:'multiple',question:'What is "drei" in English?',illustration:'3️⃣',answers:['Two','Four','Three','Five'],correct:2,explanation:'"Three" bedeutet drei! 3️⃣'},
-       {type:'multiple',question:'What is "sieben" in English?',illustration:'7️⃣',answers:['Six','Eight','Nine','Seven'],correct:3,explanation:'"Seven" bedeutet sieben! 7️⃣'},
-       {type:'truefalse',question:'"Ten" bedeutet zehn.',illustration:'🔟',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Ten = zehn. 🔟'},
-       {type:'multiple',question:'What comes after "four"?',illustration:'5️⃣',answers:['Three','Six','Five','Seven'],correct:2,explanation:'After four comes five! Nach vier kommt fünf. 5️⃣'},
-       {type:'multiple',question:'How many is "eight"?',illustration:'8️⃣',answers:['6','7','9','8'],correct:3,explanation:'"Eight" ist die Zahl 8! 8️⃣'}],
-      [{type:'multiple',question:'What color is the sky?',illustration:'☀️',answers:['Red','Green','Yellow','Blue'],correct:3,explanation:'The sky is blue! Der Himmel ist blau. 💙'},
-       {type:'multiple',question:'Was bedeutet "red"?',illustration:'🔴',answers:['Blau','Grün','Rot','Gelb'],correct:2,explanation:'"Red" bedeutet rot! 🔴'},
-       {type:'truefalse',question:'"Green" bedeutet grün.',illustration:'🟢',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Green = grün. 🟢'},
-       {type:'multiple',question:'What color is a banana?',illustration:'🍌',answers:['Red','Blue','Green','Yellow'],correct:3,explanation:'A banana is yellow! Eine Banane ist gelb. 💛'},
-       {type:'multiple',question:'Was bedeutet "white"?',illustration:'⬜',answers:['Schwarz','Grau','Weiß','Blau'],correct:2,explanation:'"White" bedeutet weiß! ⬜'}],
-      [{type:'multiple',question:'What is "Mutter" in English?',illustration:'👩',answers:['Father','Sister','Brother','Mother'],correct:3,explanation:'"Mother" bedeutet Mutter! 👩'},
-       {type:'multiple',question:'Was bedeutet "brother"?',illustration:'👦',answers:['Schwester','Vater','Bruder','Mutter'],correct:2,explanation:'"Brother" bedeutet Bruder! 👦'},
-       {type:'truefalse',question:'"Sister" bedeutet Schwester.',illustration:'👧',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Sister = Schwester. 👧'},
-       {type:'multiple',question:'What is "Vater" in English?',illustration:'👨',answers:['Mother','Brother','Sister','Father'],correct:3,explanation:'"Father" bedeutet Vater! 👨'},
-       {type:'multiple',question:'Was bedeutet "family"?',illustration:'👨‍👩‍👧‍👦',answers:['Schule','Freund','Familie','Haus'],correct:2,explanation:'"Family" bedeutet Familie! 👨‍👩‍👧‍👦'}],
-      [{type:'multiple',question:'What animal says "Moo"?',illustration:'🐄',answers:['Dog','Cat','Cow','Horse'],correct:2,explanation:'The cow says Moo! Die Kuh macht Muh. 🐄'},
-       {type:'multiple',question:'Was bedeutet "dog"?',illustration:'🐕',answers:['Katze','Pferd','Hund','Vogel'],correct:2,explanation:'"Dog" bedeutet Hund! 🐕'},
-       {type:'truefalse',question:'"Cat" bedeutet Katze.',illustration:'🐱',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Cat = Katze. 🐱'},
-       {type:'multiple',question:'What is "Vogel" in English?',illustration:'🐦',answers:['Fish','Bird','Horse','Frog'],correct:1,explanation:'"Bird" bedeutet Vogel! 🐦'},
-       {type:'multiple',question:'Was bedeutet "fish"?',illustration:'🐟',answers:['Vogel','Hund','Fisch','Pferd'],correct:2,explanation:'"Fish" bedeutet Fisch! 🐟'}],
-    ],
+// ── fallback questions ─────────────────────────────────────
+const FBQ={
+  mini:{
+    farben:[[{type:"multiple",question:"Welche Farbe hat eine reife Tomate?",illustration:"🍅",answers:["Blau","Rot","Grün","Gelb"],correct:1,explanation:"Eine reife Tomate ist rot! 🍅"},{type:"multiple",question:"Welche Farbe hat der Himmel?",illustration:"☀️",answers:["Rot","Grün","Blau","Orange"],correct:2,explanation:"Der Himmel ist blau! ☀️"},{type:"multiple",question:"Welche Farbe hat eine Banane?",illustration:"🍌",answers:["Rot","Blau","Lila","Gelb"],correct:3,explanation:"Eine Banane ist gelb! 🍌"},{type:"truefalse",question:"Eine Erdbeere ist rot.",illustration:"🍓",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Erdbeeren sind rot. 🍓"},{type:"multiple",question:"Was ist BLAU?",illustration:"🌊",answers:["Sonne","Meer","Apfel","Gras"],correct:1,explanation:"Das Meer ist blau! 🌊"}]],
+    tiere:[[{type:"multiple",question:"Welches Tier bellt?",illustration:"🐕",answers:["Katze","Hund","Fisch","Vogel"],correct:1,explanation:"Hunde bellen! 🐕"},{type:"multiple",question:"Was gibt uns die Kuh?",illustration:"🐄",answers:["Honig","Eier","Wolle","Milch"],correct:3,explanation:"Die Kuh gibt uns Milch! 🐄"},{type:"truefalse",question:"Ein Goldfisch lebt im Wasser.",illustration:"🐠",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Fische leben im Wasser. 🐠"},{type:"multiple",question:"Wie viele Beine hat eine Katze?",illustration:"🐱",answers:["2","6","4","8"],correct:2,explanation:"Katzen haben 4 Beine! 🐱"},{type:"multiple",question:"Was sagt die Kuh?",illustration:"🐄",answers:["Wau","Miau","Muh","Quak"],correct:2,explanation:"Die Kuh macht Muh! 🐄"}]],
+    zahlen:[[{type:"multiple",question:"Wie viele Augen hat ein Mensch?",illustration:"👀",answers:["1","2","3","4"],correct:1,explanation:"Ein Mensch hat 2 Augen! 👀"},{type:"multiple",question:"Was kommt nach der 2?",illustration:"🔢",answers:["1","4","2","3"],correct:3,explanation:"Nach der 2 kommt die 3! 3️⃣"},{type:"truefalse",question:"1 + 1 = 2",illustration:"➕",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Eins plus eins = zwei. ✌️"},{type:"multiple",question:"Wie viele Finger hat eine Hand?",illustration:"✋",answers:["4","6","3","5"],correct:3,explanation:"Eine Hand hat 5 Finger! ✋"},{type:"multiple",question:"Welche Zahl ist die größte?",illustration:"🔢",answers:["3","7","5","9"],correct:3,explanation:"9 ist die größte! 9️⃣"}]],
   },
-
-  mittel: {
-    mathe: [
-      [{type:'multiple',question:'Was ist ½ als Dezimalzahl?',illustration:'½',answers:['0,2','0,25','0,5','0,75'],correct:2,explanation:'½ = 0,5 ✅'},
-       {type:'multiple',question:'Was ergibt ¼ + ¼?',illustration:'➕',answers:['¼','½','¾','1'],correct:1,explanation:'¼ + ¼ = ½ ✅'},
-       {type:'truefalse',question:'¾ ist größer als ½.',illustration:'🔢',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! ¾ = 0,75 und ½ = 0,5. Also ist ¾ größer. ✅'},
-       {type:'multiple',question:'Welcher Bruch ist am größten?',illustration:'🔢',answers:['⅓','¼','½','⅛'],correct:2,explanation:'½ ist am größten (= 0,5). ✅'},
-       {type:'multiple',question:'Was ergibt ⅓ + ⅓?',illustration:'➕',answers:['⅓','½','⅔','1'],correct:2,explanation:'⅓ + ⅓ = ⅔ ✅'}],
-      [{type:'multiple',question:'Was ergibt ½ + ¼?',illustration:'➕',answers:['¼','½','¾','1'],correct:2,explanation:'½ + ¼ = ²⁄₄ + ¼ = ¾ ✅'},
-       {type:'multiple',question:'Was ergibt ⅔ + ⅓?',illustration:'➕',answers:['⅔','⅚','1','1⅓'],correct:2,explanation:'⅔ + ⅓ = 3/3 = 1 ✅'},
-       {type:'truefalse',question:'¼ + ¾ = 1',illustration:'➕',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! ¼ + ¾ = 4/4 = 1 ✅'},
-       {type:'multiple',question:'Was ergibt 1½ + ½?',illustration:'➕',answers:['1','1½','2','2½'],correct:2,explanation:'1½ + ½ = 2 ✅'},
-       {type:'multiple',question:'Was ergibt ⅝ + ⅜?',illustration:'➕',answers:['⅞','1','1⅛','¾'],correct:1,explanation:'⅝ + ⅜ = 8/8 = 1 ✅'}],
-      [{type:'multiple',question:'Wie schreibt man 0,75 als Bruch?',illustration:'🔢',answers:['½','⅔','¾','⅘'],correct:2,explanation:'0,75 = ¾ ✅'},
-       {type:'multiple',question:'Was ist 1,5 als gemischte Zahl?',illustration:'🔢',answers:['1¼','1½','1¾','2'],correct:1,explanation:'1,5 = 1½ ✅'},
-       {type:'truefalse',question:'0,3 ist kleiner als 0,31.',illustration:'🔢',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! 0,30 < 0,31 ✅'},
-       {type:'multiple',question:'Was ergibt 2,5 + 1,5?',illustration:'➕',answers:['3','3,5','4','4,5'],correct:2,explanation:'2,5 + 1,5 = 4 ✅'},
-       {type:'multiple',question:'Wie viele Stellen hat 3,14 nach dem Komma?',illustration:'🔢',answers:['1','3','2','4'],correct:2,explanation:'3,14 hat 2 Dezimalstellen: 1 und 4. ✅'}],
-    ],
-    deutsch: [
-      [{type:'multiple',question:'Was ist ein Nomen (Substantiv)?',illustration:'📝',answers:['Ein Tunwort','Ein Namenwort (Ding, Person, Tier, Ort)','Ein Wiewort','Ein Verbindungswort'],correct:1,explanation:'Nomen sind Namenwörter: Hund, Schule, Anna, Berlin. Sie werden großgeschrieben! ✅'},
-       {type:'multiple',question:'Was ist ein Verb?',illustration:'📝',answers:['Ein Namenwort','Ein Wiewort','Ein Tunwort (Tätigkeit)','Ein Artikel'],correct:2,explanation:'Verben sind Tunwörter: laufen, essen, schlafen. ✅'},
-       {type:'truefalse',question:'Adjektive beschreiben Nomen (z.B. „der rote Ball").',illustration:'📝',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Adjektive sind Wiewörter – sie sagen, wie etwas ist. ✅'},
-       {type:'multiple',question:'Welches Wort ist ein Nomen?',illustration:'📝',answers:['laufen','schön','Schule','aber'],correct:2,explanation:'„Schule" ist ein Nomen – es wird großgeschrieben! ✅'},
-       {type:'multiple',question:'Welches Wort ist ein Verb?',illustration:'📝',answers:['Hund','blau','und','schwimmen'],correct:3,explanation:'„Schwimmen" ist ein Verb – es beschreibt eine Tätigkeit. ✅'}],
-      [{type:'multiple',question:'Was ist das Subjekt in einem Satz?',illustration:'📝',answers:['Die Tätigkeit im Satz','Das Wort, über das gesprochen wird','Eine Ortsangabe','Ein Adjektiv'],correct:1,explanation:'Das Subjekt ist das Wort, über das gesprochen wird – meist eine Person oder Sache. ✅'},
-       {type:'multiple',question:'Was ist das Prädikat?',illustration:'📝',answers:['Das Verb im Satz','Das Nomen','Die Ortsangabe','Der Artikel'],correct:0,explanation:'Das Prädikat ist das Verb – die Tätigkeit im Satz. ✅'},
-       {type:'truefalse',question:'Im Satz „Die Katze schläft." ist „schläft" das Prädikat.',illustration:'🐱',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! „Schläft" ist das Verb = Prädikat. ✅'},
-       {type:'multiple',question:'Was ist das Objekt im Satz?',illustration:'📝',answers:['Das Subjekt','Die Ergänzung (wen/was, wem)','Das Verb','Der Artikel'],correct:1,explanation:'Das Objekt ist die Ergänzung: „Sie liest ein Buch." – „ein Buch" ist das Objekt. ✅'},
-       {type:'multiple',question:'Finde das Subjekt: „Der Hund bellt laut."',illustration:'🐕',answers:['bellt','laut','Der','Der Hund'],correct:3,explanation:'„Der Hund" ist das Subjekt – über ihn wird gesprochen. ✅'}],
-    ],
-    englisch: [
-      [{type:'multiple',question:'Bilde Simple Past: „I (go) to school."',illustration:'🏫',answers:['I go','I goed','I went','I going'],correct:2,explanation:'"Go" ist unregelmäßig: Simple Past = „went". I went to school. ✅'},
-       {type:'multiple',question:'Was ist Simple Past von „play"?',illustration:'⚽',answers:['playd','played','plays','play'],correct:1,explanation:'Regelmäßige Verben: play → played. ✅'},
-       {type:'truefalse',question:'"She went to the cinema yesterday." ist grammatisch richtig.',illustration:'🎬',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! „Went" ist Simple Past von „go". ✅'},
-       {type:'multiple',question:'Was ist Simple Past von „eat"?',illustration:'🍕',answers:['eated','ate','eats','eating'],correct:1,explanation:'"Eat" ist unregelmäßig: Simple Past = „ate". ✅'},
-       {type:'multiple',question:'Wann benutzt man Simple Past?',illustration:'⏰',answers:['Für die Zukunft','Für Gewohnheiten jetzt','Für abgeschlossene Handlungen in der Vergangenheit','Für aktuelle Handlungen'],correct:2,explanation:'Simple Past = abgeschlossene Ereignisse in der Vergangenheit. ✅'}],
-    ],
-    geschichte: [
-      [{type:'multiple',question:'An welchem Fluss lag das alte Ägypten?',illustration:'🏺',answers:['Rhein','Donau','Nil','Amazonas'],correct:2,explanation:'Das alte Ägypten lag am Nil! Der Nil gab dem Land fruchtbaren Boden. 🏺'},
-       {type:'multiple',question:'Wie nannte man den Herrscher im alten Ägypten?',illustration:'👑',answers:['Kaiser','König','Pharao','Präsident'],correct:2,explanation:'Der Herrscher im alten Ägypten hieß Pharao! 👑'},
-       {type:'truefalse',question:'Die Pyramiden wurden als Grabmäler für die Pharaonen gebaut.',illustration:'🔺',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Die Pyramiden sind riesige Grabmäler. 🔺'},
-       {type:'multiple',question:'Was ist die Hieroglyphenschrift?',illustration:'𓂀',answers:['Eine Zahlensprache','Eine Bilderschrift der alten Ägypter','Eine moderne Schrift','Eine griechische Schrift'],correct:1,explanation:'Hieroglyphen sind die Bilderschrift der alten Ägypter! ✅'},
-       {type:'multiple',question:'Was ist die Sphinx?',illustration:'🗿',answers:['Ein ägyptischer Gott','Eine Pyramide','Eine Statue mit Menschenkopf und Löwenkörper','Ein Schiff'],correct:2,explanation:'Die Sphinx hat einen Menschenkopf und einen Löwenkörper. 🗿'}],
-    ],
+  junior:{
+    mathe:[[{type:"multiple",question:"Was ergibt 8 + 5?",illustration:"➕",answers:["11","12","13","14"],correct:2,explanation:"8 + 5 = 13 ✅"},{type:"multiple",question:"Was ergibt 15 – 7?",illustration:"➖",answers:["6","7","8","9"],correct:2,explanation:"15 – 7 = 8 ✅"},{type:"truefalse",question:"9 + 9 = 18",illustration:"➕",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! 9 + 9 = 18 ✅"},{type:"multiple",question:"Was ergibt 2 × 5?",illustration:"✖️",answers:["8","9","10","11"],correct:2,explanation:"2 × 5 = 10 ✅"},{type:"multiple",question:"Was ergibt 50 + 30?",illustration:"➕",answers:["70","75","80","85"],correct:2,explanation:"50 + 30 = 80 ✅"}]],
+    englisch:[[{type:"multiple",question:"How do you say Hallo in English?",illustration:"👋",answers:["Bye","Hello","Thanks","Sorry"],correct:1,explanation:'"Hello" = Hallo! 👋'},{type:"multiple",question:"What color is the sky?",illustration:"☀️",answers:["Red","Green","Yellow","Blue"],correct:3,explanation:"The sky is blue! 💙"},{type:"truefalse",question:'"Good morning" means Guten Morgen.',illustration:"🌅",answers:["Richtig","Falsch"],correct:0,explanation:"Yes! Good morning = Guten Morgen. 🌅"},{type:"multiple",question:'What is "drei" in English?',illustration:"3️⃣",answers:["Two","Four","Three","Five"],correct:2,explanation:'"Three" = drei! 3️⃣'},{type:"multiple",question:'What is "Hund" in English?',illustration:"🐕",answers:["Cat","Bird","Dog","Fish"],correct:2,explanation:'"Dog" = Hund! 🐕'}]],
   },
-
-  profi: {
-    mathe: [
-      [{type:'multiple',question:'Was ist der y-Achsenabschnitt der Funktion f(x) = 2x + 3?',illustration:'📈',answers:['2','3','5','0'],correct:1,explanation:'Bei f(x) = mx + b ist b der y-Achsenabschnitt. Hier: b = 3. ✅'},
-       {type:'multiple',question:'Welche Steigung hat f(x) = –3x + 1?',illustration:'📈',answers:['1','–1','3','–3'],correct:3,explanation:'Bei f(x) = mx + b ist m die Steigung. Hier: m = –3. ✅'},
-       {type:'truefalse',question:'Eine lineare Funktion mit m > 0 ist streng monoton steigend.',illustration:'📈',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Positive Steigung bedeutet steigender Graph. ✅'},
-       {type:'multiple',question:'Wo schneidet f(x) = 4x – 8 die x-Achse?',illustration:'📊',answers:['x = 2','x = 4','x = –2','x = 8'],correct:0,explanation:'Nullstelle: 4x – 8 = 0 → x = 2. ✅'},
-       {type:'multiple',question:'Wie lautet die Gleichung einer Geraden durch (0|2) mit Steigung 3?',illustration:'📈',answers:['f(x) = 2x + 3','f(x) = 3x – 2','f(x) = 3x + 2','f(x) = 2x – 3'],correct:2,explanation:'m = 3, b = 2 → f(x) = 3x + 2. ✅'}],
-      [{type:'multiple',question:'Löse: x² – 9 = 0',illustration:'➕',answers:['x = 3','x = ±3','x = 9','x = ±9'],correct:1,explanation:'x² = 9 → x = ±3. Zwei Lösungen! ✅'},
-       {type:'multiple',question:'Was ist die Diskriminante bei ax²+bx+c=0?',illustration:'📐',answers:['a²–4bc','b²–4ac','b²+4ac','a²+4bc'],correct:1,explanation:'Diskriminante D = b² – 4ac bestimmt die Lösungsanzahl. ✅'},
-       {type:'truefalse',question:'Ist D < 0, hat die quadratische Gleichung keine reellen Lösungen.',illustration:'📐',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Negative Diskriminante → keine reellen Lösungen. ✅'},
-       {type:'multiple',question:'Löse: x² + 4x + 4 = 0',illustration:'📐',answers:['x = 2','x = –2','x = ±2','x = 4'],correct:1,explanation:'(x+2)² = 0 → x = –2. Doppelte Nullstelle! ✅'},
-       {type:'multiple',question:'Welche Form hat die Parabel von f(x) = –x²?',illustration:'📊',answers:['Nach oben geöffnet','Gerade Linie','Nach unten geöffnet','Kreis'],correct:2,explanation:'Negativer Koeffizient vor x² → Parabel öffnet nach unten. ✅'}],
-    ],
-    physik: [
-      [{type:'multiple',question:'Was besagt Newtons erstes Gesetz (Trägheitsgesetz)?',illustration:'⚡',answers:['F = m·a','Körper bleiben in Ruhe/gleichförmiger Bewegung ohne Krafteinwirkung','Zu jeder Kraft gibt es eine gleich große Gegenkraft','Energie bleibt erhalten'],correct:1,explanation:'Das Trägheitsgesetz: Ohne äußere Kraft ändert sich der Bewegungszustand nicht. ✅'},
-       {type:'multiple',question:'Was besagt F = m · a?',illustration:'⚡',answers:['Energieerhaltung','Gravitationsgesetz','Zweites Newtonsches Gesetz','Optisches Brechungsgesetz'],correct:2,explanation:'F = m · a ist Newtons 2. Gesetz: Kraft = Masse × Beschleunigung. ✅'},
-       {type:'truefalse',question:'Newtons drittes Gesetz: Actio = Reactio – jede Kraft hat eine gleich große Gegenkraft.',illustration:'⚡',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Actio und Reactio sind gleich groß, aber entgegengesetzt gerichtet. ✅'},
-       {type:'multiple',question:'Was ist die Einheit der Kraft?',illustration:'⚡',answers:['Watt','Joule','Newton','Pascal'],correct:2,explanation:'Die Einheit der Kraft ist Newton (N). ✅'},
-       {type:'multiple',question:'Ein Auto (1000 kg) beschleunigt mit 3 m/s². Welche Kraft wirkt?',illustration:'🚗',answers:['300 N','3000 N','1000 N','333 N'],correct:1,explanation:'F = m·a = 1000 kg · 3 m/s² = 3000 N ✅'}],
-    ],
-    chemie: [
-      [{type:'multiple',question:'Aus welchen Teilchen besteht ein Atom?',illustration:'⚛️',answers:['Nur Protonen','Protonen, Neutronen, Elektronen','Nur Elektronen','Moleküle und Atome'],correct:1,explanation:'Ein Atom besteht aus Protonen und Neutronen im Kern und Elektronen in der Hülle. ⚛️'},
-       {type:'multiple',question:'Was trägt ein Proton für eine Ladung?',illustration:'⚛️',answers:['Negativ','Neutral','Positiv','Variabel'],correct:2,explanation:'Protonen tragen eine positive Ladung (+). ✅'},
-       {type:'truefalse',question:'Elektronen befinden sich in der Atomhülle.',illustration:'⚛️',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Elektronen umkreisen den Kern in Schalen/Orbitalen. ✅'},
-       {type:'multiple',question:'Was trägt ein Neutron für eine Ladung?',illustration:'⚛️',answers:['Positiv','Negativ','Neutral','Doppelt positiv'],correct:2,explanation:'Neutronen sind elektrisch neutral – daher ihr Name! ✅'},
-       {type:'multiple',question:'Was bestimmt die Ordnungszahl eines Elements?',illustration:'⚛️',answers:['Anzahl der Neutronen','Anzahl der Elektronen in der Hülle','Anzahl der Protonen im Kern','Atommasse'],correct:2,explanation:'Die Ordnungszahl = Protonenzahl. Sie definiert das Element. ✅'}],
-    ],
-    englisch: [
-      [{type:'multiple',question:'Choose the correct complex sentence:',illustration:'📝',answers:['Although it was raining, we went outside.','Although it was raining but we went outside.','Although it was raining, however we went outside.','Despite it was raining, we went outside.'],correct:0,explanation:'"Although + clause, main clause" ist die korrekte Struktur. ✅'},
-       {type:'multiple',question:'What does "nevertheless" mean?',illustration:'📝',answers:['Therefore','However/Nonetheless','Additionally','For example'],correct:1,explanation:'"Nevertheless" bedeutet „trotzdem" oder „dennoch". ✅'},
-       {type:'truefalse',question:'"Despite" is followed by a noun or gerund, not a full clause.',illustration:'📝',answers:['Richtig','Falsch'],correct:0,explanation:'Richtig! Despite + Nomen/Gerund: "Despite the rain..." (nicht "Despite it rained"). ✅'},
-       {type:'multiple',question:'Which sentence uses the subjunctive correctly?',illustration:'📝',answers:['If I was you, I would apologize.','If I were you, I would apologize.','If I am you, I would apologize.','If I be you, I would apologize.'],correct:1,explanation:'"If I were you" – im Konjunktiv II steht „were" für alle Personen. ✅'},
-       {type:'multiple',question:'What is the correct passive form of "They build houses"?',illustration:'🏠',answers:['Houses are built by them.','Houses is built by them.','Houses were built by them.','Houses be built by them.'],correct:0,explanation:'Passiv Präsens: Subject + am/is/are + past participle. ✅'}],
-    ],
+  mittel:{
+    mathe:[[{type:"multiple",question:"Was ist ½ als Dezimalzahl?",illustration:"½",answers:["0,2","0,25","0,5","0,75"],correct:2,explanation:"½ = 0,5 ✅"},{type:"multiple",question:"Was ergibt ¼ + ¼?",illustration:"➕",answers:["¼","½","¾","1"],correct:1,explanation:"¼ + ¼ = ½ ✅"},{type:"truefalse",question:"¾ ist größer als ½.",illustration:"🔢",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! ¾ = 0,75 > 0,5 ✅"},{type:"multiple",question:"Was ergibt 25% von 80?",illustration:"💯",answers:["15","20","25","30"],correct:1,explanation:"25% von 80 = 20 ✅"},{type:"multiple",question:"Was ergibt 3x – 6 = 0?",illustration:"➕",answers:["x = 1","x = 2","x = 3","x = 6"],correct:1,explanation:"3x = 6 → x = 2 ✅"}]],
+  },
+  profi:{
+    mathe:[[{type:"multiple",question:"y-Achsenabschnitt von f(x) = 2x + 3?",illustration:"📈",answers:["2","3","5","0"],correct:1,explanation:"Bei f(x)=mx+b ist b=3 der y-Achsenabschnitt. ✅"},{type:"multiple",question:"Löse: x² – 9 = 0",illustration:"📐",answers:["x=3","x=±3","x=9","x=±9"],correct:1,explanation:"x²=9 → x=±3 ✅"},{type:"truefalse",question:"D<0: quadr. Gleichung hat keine reellen Lösungen.",illustration:"📐",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Negative Diskriminante → keine reellen Lösungen. ✅"},{type:"multiple",question:"Was ist die Steigung von f(x) = –3x + 1?",illustration:"📈",answers:["1","–1","3","–3"],correct:3,explanation:"m = –3 ist die Steigung. ✅"},{type:"multiple",question:"F = m · a – welches Gesetz?",illustration:"⚡",answers:["1. Newton","2. Newton","3. Newton","Energieerhaltung"],correct:1,explanation:"F = m·a ist Newtons 2. Gesetz. ✅"}]],
   },
 };
-
-// Gibt echte Fallback-Fragen zurück – nach Altersgruppe, Fach und Lektion
-function fbQs(title) {
-  const age = S.prof ? S.prof.age : 'junior';
-  const subId = S.sub ? S.sub.id : '';
-  const idx = S.lesson ? S.lesson.index : 0;
-  try {
-    const qs = FALLBACK_DB[age][subId][idx];
-    if (qs && qs.length > 0) return qs;
-  } catch(e) {}
-  // Generischer Fallback falls noch kein Inhalt für diese Kombination
-  return [
-    {type:'multiple',question:`Was weißt du über das Thema „${title}"?`,illustration:'🤔',answers:['Sehr viel!','Einiges','Wenig','Nichts'],correct:0,explanation:'Super – Neugier ist der erste Schritt beim Lernen! 📚'},
-    {type:'truefalse',question:'Regelmäßiges Üben hilft beim Lernen.',illustration:'📚',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Wer regelmäßig übt, merkt sich Dinge viel besser. ✅'},
+function fbQs(title){
+  const p=S.prof;const age=p?p.age:"junior";
+  const subId=S.lesson?.sub?.id||"";
+  const idx=S.lesson?.index||0;
+  try{
+    const qs=(FBQ[age]||{})[subId];
+    if(qs&&qs[Math.min(idx,qs.length-1)])return qs[Math.min(idx,qs.length-1)];
+    if(qs&&qs[0])return qs[0];
+  }catch{}
+  return[
+    {type:"multiple",question:`Was weißt du über "${title}"?`,illustration:"🤔",answers:["Sehr viel!","Einiges","Wenig","Nichts"],correct:0,explanation:"Super – Neugier ist der erste Schritt! 📚"},
+    {type:"truefalse",question:"Regelmäßiges Üben hilft beim Lernen.",illustration:"📚",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Wer übt, merkt sich mehr. ✅"},
   ];
 }
 
 function renderQ(){
-  const q=S.qs[S.qi],t=S.qs.length;
+  const q=S.qs[S.qi];const total=S.qs.length;
   S.ans=false;S.sel=null;
-  document.getElementById('qpf').style.width=(S.qi/t*100)+'%';
-  document.getElementById('qc').textContent=`${S.qi+1}/${t}`;
-  const tag=document.getElementById('q-tag');tag.textContent=S.sub.icon+' '+S.sub.name;tag.style.background=S.sub.col;
-  document.getElementById('q-txt').textContent=q.question;
-  document.getElementById('q-illus').textContent=q.illustration||'';
-  const con=document.getElementById('q-ans');con.innerHTML='';
-  const isTF=q.type==='truefalse'||q.answers.length===2;
-  const gr=document.createElement('div');gr.className='ag'+(isTF?' sc':'');
-  const letters=['A','B','C','D'];
+  document.getElementById("qpf").style.width=(S.qi/total*100)+"%";
+  document.getElementById("qc").textContent=`${S.qi+1}/${total}`;
+  const sub=S.lesson.sub;
+  const tag=document.getElementById("q-tag");tag.textContent=sub.icon+" "+sub.name;tag.style.background=sub.col;
+  const diffLabels={1:"Normal",2:"Schwerer",3:"Experte"};
+  const diffColors={1:"var(--grn)",2:"var(--acc)",3:"var(--pri)"};
+  const db=document.getElementById("diff-badge");
+  db.textContent=S.isDaily?"⚡ Täglich":(diffLabels[S.diffLevel]||"Normal");
+  db.style.background=S.isDaily?"var(--pur)":(diffColors[S.diffLevel]||"var(--grn)");
+  document.getElementById("q-txt").textContent=q.question;
+  document.getElementById("q-illus").textContent=q.illustration||"";
+  const con=document.getElementById("q-ans");con.innerHTML="";
+  const isTF=q.type==="truefalse"||q.answers.length===2;
+  const gr=document.createElement("div");gr.className="ag"+(isTF?" sc":"");
+  const letters=["A","B","C","D"];
   q.answers.forEach((ans,i)=>{
-    const btn=document.createElement('button');btn.className='ab';
+    const btn=document.createElement("button");btn.className="ab";
     btn.innerHTML=`<span class="al">${letters[i]}</span><span>${ans}</span>`;
-    btn.onclick=()=>{if(S.ans)return;S.sel=i;con.querySelectorAll('.ab').forEach((b,j)=>b.classList.toggle('sel',j===i));document.getElementById('chk-btn').disabled=false};
+    btn.onclick=()=>{if(S.ans)return;S.sel=i;con.querySelectorAll(".ab").forEach((b,j)=>b.classList.toggle("sel",j===i));document.getElementById("chk-btn").disabled=false};
     gr.appendChild(btn);
   });
   con.appendChild(gr);
-  const fb=document.getElementById('fbp');fb.style.display='none';fb.className='fbp';
-  document.getElementById('chk-btn').style.display='block';
-  document.getElementById('chk-btn').disabled=true;
-  document.getElementById('nxt-btn').style.display='none';
+  const fb=document.getElementById("fbp");fb.style.display="none";fb.className="fbp";
+  document.getElementById("chk-btn").textContent=t("check_btn");
+  document.getElementById("chk-btn").style.display="block";
+  document.getElementById("chk-btn").disabled=true;
+  document.getElementById("nxt-btn").textContent=t("next_btn");
+  document.getElementById("nxt-btn").style.display="none";
 }
 
 function checkAns(){
   if(S.ans||S.sel===null)return;S.ans=true;
   const q=S.qs[S.qi];const ok=S.sel===q.correct;
   if(ok)S.ok++;else S.ng++;
-  document.querySelectorAll('.ab').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.classList.add('ok');else if(i===S.sel&&!ok)b.classList.add('ng')});
-  const fb=document.getElementById('fbp');fb.style.display='block';fb.className='fbp '+(ok?'ok':'ng');
-  document.getElementById('fbt').textContent=ok?['Super! 🎉','Richtig! ✅','Klasse! 🌟','Jawohl! 🎯'][Math.floor(Math.random()*4)]:['Fast! 💪','Nicht ganz…','Schade! 🙁','Versuche es nächstes Mal!'][Math.floor(Math.random()*4)];
-  document.getElementById('fbtx').textContent=q.explanation||'';
-  document.getElementById('chk-btn').style.display='none';document.getElementById('nxt-btn').style.display='block';
+  // Add to repeat queue if wrong
+  const key=S.lesson.sub.id+"_"+S.lesson.index;
+  if(!ok&&S.lesson.index>=0){
+    if(!S.prof.repeatQueue)S.prof.repeatQueue=[];
+    if(!S.prof.repeatQueue.includes(key))S.prof.repeatQueue.push(key);
+  }
+  document.querySelectorAll(".ab").forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.classList.add("ok");else if(i===S.sel&&!ok)b.classList.add("ng")});
+  const fb=document.getElementById("fbp");fb.style.display="block";fb.className="fbp "+(ok?"ok":"ng");
+  const cw=t("correct_words");const ww=t("wrong_words");
+  document.getElementById("fbt").textContent=ok?cw[Math.floor(Math.random()*cw.length)]:ww[Math.floor(Math.random()*ww.length)];
+  document.getElementById("fbtx").textContent=q.explanation||"";
+  document.getElementById("chk-btn").style.display="none";
+  document.getElementById("nxt-btn").style.display="block";
 }
 window.checkAns=checkAns;
 
 function nextQ(){S.qi++;if(S.qi>=S.qs.length)finishLesson();else renderQ()}
 window.nextQ=nextQ;
 
-// ── finish ─────────────────────────────────────────────────
+// ── finish lesson ──────────────────────────────────────────
 async function finishLesson(){
-  const p=S.prof,total=S.qs.length;
+  const p=S.prof;const total=S.qs.length;
   const pct=Math.round(S.ok/total*100);
-  const xp=Math.round((S.ok/total)*50*ACF[p.age].xm);
+  const baseXP=S.isDaily?50:Math.round((S.ok/total)*50*ACF[p.age].xm);
+  const bonusXP=S.isDaily&&pct===100?25:0;
+  const xp=baseXP+bonusXP;
   p.xp+=xp;p._lastPerfect=pct===100;
-  const key=`${S.lesson.sub.id}_${S.lesson.index}`;
-  if(!p.completedLessons)p.completedLessons=[];
-  if(!p.completedLessons.includes(key)){p.completedLessons.push(key);p.lessonsCompleted=p.completedLessons.length}
-  try{await fbWait();await fbUpdate(p)}catch(e){console.warn('sync fail',e)}
+  // Weekly XP
+  if(!p.weeklyXP||p.weeklyXP.length!==7)p.weeklyXP=[0,0,0,0,0,0,0];
+  p.weeklyXP[new Date().getDay()]=(p.weeklyXP[new Date().getDay()]||0)+xp;
+  // Mark complete / daily
+  if(!S.isDaily){
+    const key=S.lesson.sub.id+"_"+S.lesson.index;
+    if(!p.completedLessons)p.completedLessons=[];
+    if(!p.completedLessons.includes(key)){p.completedLessons.push(key);p.lessonsCompleted=p.completedLessons.length;}
+    // Remove from repeat queue if answered correctly
+    if(pct>=80&&p.repeatQueue)p.repeatQueue=p.repeatQueue.filter(k=>k!==key);
+  } else {
+    const today=new Date().toDateString();
+    if(p.dailyLastDate!==today){p.dailyLastDate=today;p.dailyCount=(p.dailyCount||0)+1;}
+  }
+  // Streak update
+  const today=new Date().toDateString();
+  if(p.lastActive!==today){
+    const yesterday=new Date(Date.now()-86400000).toDateString();
+    p.streak=p.lastActive===yesterday?(p.streak||1)+1:1;
+    p.lastActive=today;
+  }
+  try{await fbWait();await fbUpdate(p);}catch(e){console.warn(e)}
   lsSave(p);
-  const tr=pct>=90?'🏆':pct>=70?'🥈':pct>=50?'🥉':'💪';
-  const ti=pct>=90?'Fantastisch!':pct>=70?'Sehr gut!':pct>=50?'Gut gemacht!':'Weiter üben!';
-  document.getElementById('r-tr').textContent=tr;document.getElementById('r-ti').textContent=ti;
-  document.getElementById('r-ts').textContent=`"${S.lesson.title}" abgeschlossen!`;
-  document.getElementById('r-ok').textContent=S.ok;document.getElementById('r-ng').textContent=S.ng;
-  document.getElementById('r-pc').textContent=pct+'%';document.getElementById('r-xp').textContent=`+${xp} XP verdient! ⭐`;
-  document.getElementById('xp-disp').textContent=p.xp;
-  if(pct>=70)confetti();showScreen('sc-result');
+  const trs=t("result_trophies");const tis=t("result_titles");
+  const tier=pct>=90?"90":pct>=70?"70":pct>=50?"50":"0";
+  document.getElementById("r-tr").textContent=trs[tier]||"💪";
+  document.getElementById("r-ti").textContent=tis[tier]||"Weiter üben!";
+  document.getElementById("r-ts").textContent=`"${S.lesson.title}" – `+t("lessons_done");
+  document.getElementById("r-ok").textContent=S.ok;
+  document.getElementById("r-ng").textContent=S.ng;
+  document.getElementById("r-pc").textContent=pct+"%";
+  document.getElementById("r-xp").textContent=`+${xp} `+t("xp_earned")+(bonusXP?` (+${bonusXP} Bonus!)`):"";
+  const rmsg=document.getElementById("r-repeat-msg");rmsg.style.display=S.ng>0&&!S.isDaily?"block":"none";
+  document.getElementById("xp-disp").textContent=p.xp;
+  if(pct>=70)confetti();
+  showScreen("sc-result");
 }
 
 // ── profile view ───────────────────────────────────────────
 function renderPV(){
-  const p=S.prof,cfg=ACF[p.age];
-  document.getElementById('pv-av').textContent=p.avatar;
-  document.getElementById('pv-nm').textContent=p.name;
-  document.getElementById('pv-ag').textContent=cfg.em+' '+cfg.label+' ('+cfg.range+')';
-  document.getElementById('pv-cd').textContent='🔑 '+p.code;
-  document.getElementById('pv-xp').textContent=p.xp;
-  document.getElementById('pv-les').textContent=p.lessonsCompleted||0;
-  document.getElementById('pv-str').textContent=p.streak;
-  const g=document.getElementById('ach-g');g.innerHTML='';
-  ACHS.forEach(a=>{const el=document.createElement('div');el.className='ach'+(a.cond(p)?'':' lk');el.innerHTML=`<span class="ai">${a.icon}</span><div class="an">${a.name}</div>`;g.appendChild(el)});
+  const p=S.prof;const cfg=ACF[p.age];
+  document.getElementById("pv-av").textContent=p.avatar;
+  document.getElementById("pv-nm").textContent=p.name;
+  document.getElementById("pv-ag").textContent=cfg.em+" "+cfg.label+" ("+cfg.range+")";
+  document.getElementById("pv-cd").textContent="🔑 "+p.code;
+  document.getElementById("pv-xp").textContent=p.xp;
+  document.getElementById("pv-les").textContent=p.lessonsCompleted||0;
+  document.getElementById("pv-str").textContent=p.streak||1;
+  // Weekly chart
+  const days=["So","Mo","Di","Mi","Do","Fr","Sa"];
+  const wx=p.weeklyXP||[0,0,0,0,0,0,0];
+  const maxXP=Math.max(...wx,1);
+  const chart=document.getElementById("week-chart");chart.innerHTML="";
+  wx.forEach((v,i)=>{
+    const wrap=document.createElement("div");wrap.className="chart-bar-wrap";
+    const bar=document.createElement("div");bar.className="chart-bar";
+    bar.style.height=Math.round((v/maxXP)*70)+"px";
+    const lbl=document.createElement("div");lbl.className="chart-lbl";lbl.textContent=days[i];
+    const val=document.createElement("div");val.className="chart-val";val.textContent=v>0?v:"";
+    wrap.appendChild(val);wrap.appendChild(bar);wrap.appendChild(lbl);chart.appendChild(wrap);
+  });
+  // Achievements
+  const g=document.getElementById("ach-g");g.innerHTML="";
+  ACHS.forEach(a=>{const el=document.createElement("div");el.className="ach"+(a.cond(p)?"":" lk");el.innerHTML=`<span class="ai">${a.icon}</span><div class="an">${a.name}</div>`;g.appendChild(el)});
+  // Avatar shop
+  const shop=document.getElementById("avatar-shop");shop.innerHTML="";
+  SHOP_AVATARS.forEach(item=>{
+    const owned=(p.ownedAvatars||[]).includes(item.e)||item.cost===0;
+    const el=document.createElement("div");
+    el.className="shop-item"+(owned?" owned":item.cost>p.xp?" locked":"");
+    el.innerHTML=`<span class="si-emoji">${item.e}</span><div class="si-cost">${owned?"✅ Besitzt":`${item.cost} XP`}</div>`;
+    if(!owned&&item.cost<=p.xp)el.onclick=()=>buyAvatar(item);
+    else if(owned)el.onclick=()=>equipAvatar(item.e);
+    shop.appendChild(el);
+  });
+}
+function buyAvatar(item){
+  const p=S.prof;
+  if(p.xp<item.cost){toast("Nicht genug XP! 💎");return}
+  if(!confirm(`${item.e} für ${item.cost} XP kaufen?`))return;
+  p.xp-=item.cost;
+  if(!p.ownedAvatars)p.ownedAvatars=[];
+  p.ownedAvatars.push(item.e);
+  p.avatar=item.e;
+  fbUpdate(p).catch(()=>{});lsSave(p);
+  toast(`${item.e} freigeschaltet! ✅`);renderPV();
+}
+function equipAvatar(e){
+  S.prof.avatar=e;
+  fbUpdate(S.prof).catch(()=>{});lsSave(S.prof);
+  toast(`${e} ausgerüstet! ✅`);renderPV();
+}
+window.buyAvatar=buyAvatar;window.equipAvatar=equipAvatar;
+
+function copyCode(){const code=S.prof.code;navigator.clipboard.writeText(code).then(()=>toast("Code kopiert: "+code+" 📋")).catch(()=>toast("Code: "+code))}
+window.copyCode=copyCode;
+function switchProf(){S.prof=null;S.chatInit=false;S.chat=[];renderSplash();showScreen("sc-splash")}
+window.switchProf=switchProf;
+
+// ── parental area ──────────────────────────────────────────
+let pinBuf="";
+function showParent(){pinBuf="";updatePinDisplay();document.getElementById("parent-pin-screen").style.display="flex";document.getElementById("parent-dashboard").style.display="none";showScreen("sc-parent")}
+function pinPress(v){
+  if(v==="C"){pinBuf=pinBuf.slice(0,-1);updatePinDisplay();return}
+  if(v==="OK"){checkPin();return}
+  if(pinBuf.length>=4)return;
+  pinBuf+=v;updatePinDisplay();
+  if(pinBuf.length===4)setTimeout(checkPin,200);
+}
+function updatePinDisplay(){
+  const dots=pinBuf.split("").map(()=>"●").join("  ")+"  ·  ".repeat(4-pinBuf.length);
+  document.getElementById("pin-display").textContent=pinBuf.length===0?"·  ·  ·  ·":pinBuf.split("").map(()=>"●").join("  ");
+}
+function checkPin(){
+  const stored=localStorage.getItem("lw_parent_pin")||"1234";
+  if(pinBuf===stored){document.getElementById("parent-pin-screen").style.display="none";document.getElementById("parent-dashboard").style.display="block";renderParentDash();}
+  else{toast("Falscher PIN! ❌");pinBuf="";updatePinDisplay();}
+}
+function savePin(){
+  const v=(document.getElementById("new-pin").value||"").trim();
+  if(v.length!==4||!/^\d{4}$/.test(v)){toast("Bitte einen 4-stelligen PIN eingeben! 🔢");return}
+  localStorage.setItem("lw_parent_pin",v);toast("PIN geändert! ✅");document.getElementById("new-pin").value="";
+}
+window.pinPress=pinPress;window.savePin=savePin;
+
+function renderParentDash(){
+  const saved=lsGet();
+  const div=document.getElementById("parent-children");div.innerHTML="";
+  saved.forEach(p=>{
+    const cfg=ACF[p.age]||ACF.junior;
+    const c=document.createElement("div");c.className="child-stat-card";
+    c.innerHTML=`<div style="font-size:32px">${p.avatar}</div><div style="flex:1"><div style="font-family:'Baloo 2',cursive;font-size:16px;font-weight:800">${p.name}</div><div style="font-size:12px;color:var(--muted);font-weight:600">${cfg.label} · Code: ${p.code}</div></div><div style="text-align:right"><div style="font-family:'Baloo 2',cursive;font-size:18px;font-weight:800;color:var(--pri)">${p.xp||0} XP</div><div style="font-size:10px;color:var(--muted)">Gesamt</div></div>`;
+    div.appendChild(c);
+  });
+  // Weekly trophy
+  const winner=saved.reduce((a,b)=>(a.xp||0)>(b.xp||0)?a:b,saved[0]||{name:"–",avatar:"🏅"});
+  document.getElementById("trophy-txt").textContent=winner.name?`${winner.avatar} ${winner.name} führt diese Woche!`:"Noch keine Daten";
 }
 
-function copyCode(){const code=S.prof.code;navigator.clipboard.writeText(code).then(()=>toast('Code kopiert: '+code+' 📋')).catch(()=>toast('Dein Code: '+code))}
-window.copyCode=copyCode;
-
-function switchProf(){S.prof=null;S.chatInit=false;S.chat=[];renderSplash();showScreen('sc-splash')}
-window.switchProf=switchProf;
+// ── settings ───────────────────────────────────────────────
+let _settingsFrom="sc-splash";
+function openSettings(){
+  const active=document.querySelector(".screen.active");
+  if(active&&active.id!=="sc-settings")_settingsFrom=active.id;
+  const key=getApiKey();
+  const inp=document.getElementById("key-input");inp.value=key;inp.type="password";
+  document.getElementById("key-eye").textContent="👁️";
+  updateKeyStatus();
+  const lang=localStorage.getItem("lw_lang")||"de";
+  document.getElementById("lang-de").style.borderColor=lang==="de"?"var(--pri)":"#eee";
+  document.getElementById("lang-de").style.background=lang==="de"?"rgba(255,107,53,.08)":"#fff";
+  document.getElementById("lang-en").style.borderColor=lang==="en"?"var(--pri)":"#eee";
+  document.getElementById("lang-en").style.background=lang==="en"?"rgba(255,107,53,.08)":"#fff";
+  showScreen("sc-settings");
+}
+function settingsBack(){showScreen(_settingsFrom)}
+function toggleKeyVis(){const i=document.getElementById("key-input");const e=document.getElementById("key-eye");if(i.type==="password"){i.type="text";e.textContent="🙈";}else{i.type="password";e.textContent="👁️";}}
+function saveKey(){
+  const val=document.getElementById("key-input").value.trim();
+  if(val&&!val.startsWith("sk-ant-")){toast("Ungültiger Key ⚠️");return}
+  if(val){localStorage.setItem(LS_KEY,val);toast("✅ Key gespeichert! KI-Fragen aktiv");}
+  else{localStorage.removeItem(LS_KEY);toast("Key entfernt");}
+  updateKeyStatus();
+}
+function deleteKey(){localStorage.removeItem(LS_KEY);document.getElementById("key-input").value="";updateKeyStatus();toast("Key gelöscht")}
+function updateKeyStatus(){
+  const key=getApiKey();
+  const dot=document.getElementById("key-dot");
+  const txt=document.getElementById("key-status-txt");
+  const del=document.getElementById("key-delete-btn");
+  if(key){dot.style.background="var(--grn)";txt.textContent="✅ Key aktiv – KI-Fragen aktiv";txt.style.color="var(--grn)";del.style.display="block";}
+  else{dot.style.background="#ccc";txt.textContent="Kein Key – Offline-Fragen aktiv";txt.style.color="#888";del.style.display="none";}
+}
+window.openSettings=openSettings;window.settingsBack=settingsBack;
+window.toggleKeyVis=toggleKeyVis;window.saveKey=saveKey;window.deleteKey=deleteKey;
 
 // ── chat ───────────────────────────────────────────────────
 let mid=0;
 function initChat(){
   if(S.chatInit)return;S.chatInit=true;
-  const p=S.prof,cfg=ACF[p.age];
-  appendMsg('a',`Hallo ${p.name}! 👋 Ich bin dein KI-Tutor für die Gruppe **${cfg.label}** (${cfg.range}). Was möchtest du wissen?`);
+  const p=S.prof;const cfg=ACF[p.age];
+  const lang=localStorage.getItem("lw_lang")||"de";
+  const msg=lang==="en"?`Hi ${p.name}! 👋 I'm your AI tutor for **${cfg.label}** (${cfg.range}). What would you like to know?`:`Hallo ${p.name}! 👋 Ich bin dein KI-Tutor für **${cfg.label}** (${cfg.range}). Was möchtest du wissen?`;
+  appendMsg("a",msg);
 }
-
 async function sendChat(){
-  const inp=document.getElementById('chat-in');const text=inp.value.trim();if(!text)return;
+  const inp=document.getElementById("chat-in");const text=inp.value.trim();if(!text)return;
   const apiKey=getApiKey();
-  if(!apiKey){
-    toast('Bitte zuerst API-Key in ⚙️ Einstellungen eintragen!');return;
-  }
-  inp.value='';appendMsg('u',text);S.chat.push({role:'user',content:text});
-  const tid=appendMsg('a','…');
+  if(!apiKey){toast("Bitte API-Key in ⚙️ Einstellungen eintragen!");return}
+  inp.value="";appendMsg("u",text);S.chat.push({role:"user",content:text});
+  const tid=appendMsg("a","…");
   const cfg=ACF[S.prof.age];
-  const sys=`Du bist freundlicher Lernassistent für ${S.prof.name}, Altersgruppe "${cfg.label}" (${cfg.range}). Antworte IMMER auf Deutsch, kurz und altersgerecht. Mini: sehr einfach+Emojis. Junior: spielerisch. Mittel: schulrelevant. Profi: sachlich+tiefgründig. Max. 3-4 Sätze.`;
+  const lang=localStorage.getItem("lw_lang")||"de";
+  const sys=lang==="en"?`You are a friendly tutor for ${S.prof.name}, age group "${cfg.label}" (${cfg.range}). Always answer in English, short and age-appropriate. Max 3-4 sentences.`:`Du bist freundlicher Lernassistent für ${S.prof.name}, Altersgruppe "${cfg.label}" (${cfg.range}). Antworte IMMER auf Deutsch, kurz und altersgerecht. Max. 3-4 Sätze.`;
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':apiKey,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,system:sys,messages:S.chat})
+    const r=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-api-key":apiKey,
+        "anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,system:sys,messages:S.chat})
     });
-    const d=await r.json();const reply=d.content.map(b=>b.text||'').join('');
-    S.chat.push({role:'assistant',content:reply});updMsg(tid,reply);
-  }catch{updMsg(tid,'Ups, Fehler. API-Key prüfen! 😅')}
+    const d=await r.json();const reply=d.content.map(b=>b.text||"").join("");
+    S.chat.push({role:"assistant",content:reply});updMsg(tid,reply);
+  }catch{updMsg(tid,lang==="en"?"Oops, error. Try again! 😅":"Ups, Fehler. Nochmal versuchen! 😅")}
 }
 window.sendChat=sendChat;
 
 function appendMsg(role,text){
-  const id='m'+(++mid);const w=document.getElementById('chat-msgs');
-  const d=document.createElement('div');d.id=id;
-  d.style.cssText=`display:flex;flex-direction:column;align-items:${role==='u'?'flex-end':'flex-start'};`;
-  const b=document.createElement('div');
-  b.style.cssText=`max-width:80%;padding:10px 14px;border-radius:${role==='u'?'17px 17px 4px 17px':'17px 17px 17px 4px'};font-size:14px;line-height:1.5;font-weight:600;background:${role==='u'?'linear-gradient(135deg,var(--pri),var(--pnk))':'#fff'};color:${role==='u'?'#fff':'var(--txt)'};box-shadow:var(--sh-sm);`;
-  b.textContent=text;d.appendChild(b);w.appendChild(d);w.scrollTop=w.scrollHeight;return id;
+  const id="m"+(++mid);const w=document.getElementById("chat-msgs");
+  const d=document.createElement("div");d.id=id;
+  d.style.cssText=`display:flex;flex-direction:column;align-items:${role==="u"?"flex-end":"flex-start"};margin-bottom:2px;`;
+  const b=document.createElement("div");
+  b.style.cssText=`max-width:83%;padding:11px 15px;border-radius:${role==="u"?"17px 17px 4px 17px":"17px 17px 17px 4px"};font-size:14px;line-height:1.6;font-weight:600;background:${role==="u"?"linear-gradient(135deg,var(--pri),var(--pnk))":"#fff"};color:${role==="u"?"#fff":"var(--txt)"};box-shadow:var(--sh-sm);`;
+  b.innerHTML=mdToHtml(text);d.appendChild(b);w.appendChild(d);w.scrollTop=w.scrollHeight;return id;
 }
-function updMsg(id,text){const el=document.getElementById(id);if(el)el.querySelector('div').textContent=text;document.getElementById('chat-msgs').scrollTop=9999}
+function updMsg(id,text){const el=document.getElementById(id);if(el)el.querySelector("div").innerHTML=mdToHtml(text);document.getElementById("chat-msgs").scrollTop=9999}
 
 // ── init ───────────────────────────────────────────────────
-renderSplash();
-updateKeyStatus();
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+renderSplash();updateKeyStatus();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
 </body>
 </html>
