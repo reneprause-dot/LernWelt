@@ -314,7 +314,39 @@
       cursor:pointer;color:var(--muted);margin-top:14px;transition:border-color .2s,color .2s}
     .sw-btn:hover{border-color:var(--pri);color:var(--pri)}
 
-    /* ══════════ EXPLORE / CHAT ══════════ */
+    /* ══════════ SETTINGS MODAL ══════════ */
+    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;
+      display:none;align-items:flex-end;justify-content:center}
+    .modal-bg.on{display:flex}
+    .modal{background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:520px;
+      padding:24px 22px 40px;box-shadow:0 -8px 40px rgba(0,0,0,.15);
+      animation:slideUp .3s ease}
+    .modal-title{font-family:'Baloo 2',cursive;font-size:22px;font-weight:800;
+      margin-bottom:6px;display:flex;align-items:center;gap:8px}
+    .modal-sub{font-size:13px;color:var(--muted);font-weight:600;margin-bottom:20px;line-height:1.5}
+    .key-wrap{position:relative;margin-bottom:14px}
+    .key-input{width:100%;padding:13px 50px 13px 17px;border-radius:13px;
+      border:2px solid #eee;font-family:'Nunito',sans-serif;font-size:14px;
+      font-weight:600;outline:none;transition:border-color .2s;
+      font-family:monospace;letter-spacing:.5px}
+    .key-input:focus{border-color:var(--pri)}
+    .key-eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);
+      font-size:18px;cursor:pointer;user-select:none}
+    .key-status{display:flex;align-items:center;gap:7px;font-size:13px;
+      font-weight:700;margin-bottom:18px}
+    .key-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .key-dot.ok{background:var(--grn)}
+    .key-dot.ng{background:#ff4d4d}
+    .key-dot.no{background:#ccc}
+    .modal-save{width:100%;padding:14px;border-radius:13px;border:none;
+      background:linear-gradient(135deg,var(--pri),var(--pnk));
+      color:#fff;font-family:'Baloo 2',cursive;font-size:18px;font-weight:800;
+      cursor:pointer;transition:transform .15s;margin-bottom:10px}
+    .modal-save:hover{transform:translateY(-2px)}
+    .modal-close{width:100%;padding:12px;border-radius:13px;border:2px solid #eee;
+      background:#fff;font-family:'Baloo 2',cursive;font-size:16px;font-weight:700;
+      cursor:pointer;color:var(--muted)}
+    .modal-close:hover{border-color:var(--muted)}
     #sc-explore{background:var(--bg)}
     #chat-msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:9px;padding:14px 15px 7px}
     .chat-bar{display:flex;gap:9px;padding:11px 15px;background:#fff;box-shadow:0 -2px 12px rgba(0,0,0,.06)}
@@ -392,6 +424,7 @@
     <div class="tb-right">
       <div class="xp-pill">⭐ <span id="xp-disp">0</span></div>
       <div class="age-tag" id="age-tag">Mini</div>
+      <div onclick="openSettings()" style="font-size:22px;cursor:pointer;padding:4px;border-radius:8px;transition:background .2s" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='transparent'" title="Einstellungen">⚙️</div>
     </div>
   </div>
   <div class="hc">
@@ -502,6 +535,29 @@
   <div class="chat-bar">
     <input class="chat-in" id="chat-in" placeholder="Stelle eine Frage…" onkeydown="if(event.key==='Enter')sendChat()">
     <button class="chat-snd" onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<!-- ══ SETTINGS MODAL ══ -->
+<div class="modal-bg" id="modal-settings" onclick="if(event.target===this)closeSettings()">
+  <div class="modal">
+    <div class="modal-title">⚙️ Einstellungen</div>
+    <div class="modal-sub">
+      Mit einem Anthropic API-Key werden Fragen live von KI generiert.<br>
+      Ohne Key laufen die eingebauten Offline-Fragen. Der Key wird nur auf <strong>diesem Gerät</strong> im Browser gespeichert.
+    </div>
+    <div class="key-wrap">
+      <input class="key-input" id="key-input" type="password"
+        placeholder="sk-ant-api03-…" autocomplete="off" autocorrect="off" spellcheck="false">
+      <span class="key-eye" id="key-eye" onclick="toggleKeyVis()">👁️</span>
+    </div>
+    <div class="key-status">
+      <div class="key-dot" id="key-dot" style="width:10px;height:10px;border-radius:50%;background:#ccc;flex-shrink:0"></div>
+      <span id="key-status-txt" style="font-size:13px;font-weight:700;color:var(--muted)">Kein API-Key gespeichert – Offline-Fragen aktiv</span>
+    </div>
+    <button class="modal-save" onclick="saveKey()">💾 Key speichern</button>
+    <button class="modal-close" id="key-delete-btn" onclick="deleteKey()" style="display:none;margin-bottom:10px">🗑️ Key löschen</button>
+    <button class="modal-close" onclick="closeSettings()">Schließen</button>
   </div>
 </div>
 
@@ -617,7 +673,65 @@ function navTo(tab){
 }
 window.showScreen=showScreen;window.navTo=navTo;
 
-// ── firebase ───────────────────────────────────────────────
+// ── API Key Management ─────────────────────────────────────
+const LS_KEY = 'lw_api_key';
+
+function getApiKey(){ return localStorage.getItem(LS_KEY)||'' }
+
+function openSettings(){
+  const key = getApiKey();
+  const inp = document.getElementById('key-input');
+  inp.value = key;
+  inp.type = 'password';
+  document.getElementById('key-eye').textContent = '👁️';
+  updateKeyStatus();
+  document.getElementById('modal-settings').classList.add('on');
+}
+function closeSettings(){ document.getElementById('modal-settings').classList.remove('on') }
+function toggleKeyVis(){
+  const inp = document.getElementById('key-input');
+  const eye = document.getElementById('key-eye');
+  if(inp.type==='password'){ inp.type='text'; eye.textContent='🙈'; }
+  else { inp.type='password'; eye.textContent='👁️'; }
+}
+function saveKey(){
+  const val = document.getElementById('key-input').value.trim();
+  if(val && !val.startsWith('sk-ant-')){
+    toast('Ungültiger Key – muss mit sk-ant- beginnen ⚠️'); return;
+  }
+  if(val){ localStorage.setItem(LS_KEY, val); toast('API-Key gespeichert! 🤖 KI-Fragen aktiv'); }
+  else { localStorage.removeItem(LS_KEY); toast('Key entfernt – Offline-Fragen aktiv'); }
+  updateKeyStatus();
+  closeSettings();
+}
+function deleteKey(){
+  localStorage.removeItem(LS_KEY);
+  document.getElementById('key-input').value='';
+  updateKeyStatus();
+  toast('Key gelöscht – Offline-Fragen aktiv');
+}
+function updateKeyStatus(){
+  const key = getApiKey();
+  const dot = document.getElementById('key-dot');
+  const txt = document.getElementById('key-status-txt');
+  const delBtn = document.getElementById('key-delete-btn');
+  if(key){
+    dot.style.background = '#6BCB77';
+    txt.textContent = '✅ API-Key gespeichert – KI-Fragen aktiv';
+    txt.style.color = '#3d9c4a';
+    delBtn.style.display = 'block';
+  } else {
+    dot.style.background = '#ccc';
+    txt.textContent = 'Kein API-Key – Offline-Fragen aktiv';
+    txt.style.color = 'var(--muted)';
+    delBtn.style.display = 'none';
+  }
+}
+window.openSettings=openSettings;
+window.closeSettings=closeSettings;
+window.toggleKeyVis=toggleKeyVis;
+window.saveKey=saveKey;
+window.deleteKey=deleteKey;
 async function fbGet(id){const{doc,getDoc}=window._fs;const s=await getDoc(doc(window._db,'profiles',id));return s.exists()?s.data():null}
 async function fbSet(id,data){const{doc,setDoc}=window._fs;await setDoc(doc(window._db,'profiles',id),data,{merge:true})}
 async function fbCode(code){const{doc,getDoc}=window._fs;const s=await getDoc(doc(window._db,'codes',code));if(!s.exists())return null;return fbGet(s.data().profileId)}
@@ -736,12 +850,16 @@ function openSub(sub){
 // ── quiz ───────────────────────────────────────────────────
 async function startLesson(sub,index,title){
   S.lesson={sub,index,title};S.qi=0;S.ok=0;S.ng=0;S.qs=[];S.ans=false;
-  loading(true,'KI erstellt deine Aufgaben…');showScreen('sc-quiz');
+  const hasKey = !!getApiKey();
+  loading(true, hasKey ? 'KI erstellt deine Aufgaben…' : 'Fragen werden geladen…');
+  showScreen('sc-quiz');
   try{S.qs=await genQs(sub,index,title)}catch{S.qs=fbQs(title)}
   loading(false);renderQ();
 }
 
 async function genQs(sub,index,title){
+  const apiKey = getApiKey();
+  if(!apiKey) throw new Error('Kein API-Key');
   const cfg=ACF[S.prof.age];
   const prompt=`Du bist Lehrexperte für Kinder. Erstelle genau 5 abwechslungsreiche Lernfragen auf Deutsch:
 Altersgruppe: ${cfg.label} (${cfg.range})
@@ -754,11 +872,382 @@ Schwierigkeit exakt anpassen:
 - Profi (13-16): Anspruchsvoll, 4 Antworten
 Antworte NUR mit JSON-Array (kein Markdown):
 [{"type":"multiple","question":"...","illustration":"Emoji","answers":["A","B","C","D"],"correct":0,"explanation":"Kurze Erklärung"}]`;
-  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})});
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:prompt}]})
+  });
+  if(!r.ok) throw new Error('API '+r.status);
   const d=await r.json();
   return JSON.parse(d.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim());
 }
-function fbQs(title){return[{type:'truefalse',question:`"${title}" ist ein spannendes Thema!`,illustration:'🤔',answers:['Richtig','Falsch'],correct:0,explanation:'Lernen macht Spaß!'},{type:'multiple',question:'Was hilft beim Lernen?',illustration:'📚',answers:['Schlafen','Üben & Wiederholen','Handy spielen','Nichts tun'],correct:1,explanation:'Üben hilft!'}]}
+// ── Vollständige Fallback-Fragendatenbank ─────────────────
+// Struktur: FALLBACK_DB[age][subjectId][lessonIndex] = [5 Fragen]
+const FALLBACK_DB = {
+  mini: {
+    farben: [
+      // Lektion 0: Rot, Blau & Gelb
+      [
+        {type:'multiple',question:'Welche Farbe hat eine reife Tomate?',illustration:'🍅',answers:['Blau','Rot','Grün','Gelb'],correct:1,explanation:'Eine reife Tomate ist rot! 🍅'},
+        {type:'multiple',question:'Welche Farbe hat der Himmel an einem schönen Tag?',illustration:'☀️',answers:['Rot','Grün','Blau','Orange'],correct:2,explanation:'Der Himmel ist blau! ☀️'},
+        {type:'multiple',question:'Welche Farbe hat eine Banane?',illustration:'🍌',answers:['Rot','Blau','Lila','Gelb'],correct:3,explanation:'Eine Banane ist gelb! 🍌'},
+        {type:'truefalse',question:'Eine Erdbeere ist rot.',illustration:'🍓',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Erdbeeren sind schön rot. 🍓'},
+        {type:'multiple',question:'Was ist BLAU?',illustration:'🎨',answers:['Die Sonne','Das Meer','Ein Apfel','Gras'],correct:1,explanation:'Das Meer ist blau! 🌊'},
+      ],
+      // Lektion 1: Grün & Orange
+      [
+        {type:'multiple',question:'Welche Farbe hat Gras?',illustration:'🌿',answers:['Gelb','Blau','Grün','Rot'],correct:2,explanation:'Gras ist grün! 🌿'},
+        {type:'multiple',question:'Welche Farbe hat eine Orange?',illustration:'🍊',answers:['Grün','Blau','Rot','Orange'],correct:3,explanation:'Eine Orange ist orange – genau wie ihr Name! 🍊'},
+        {type:'truefalse',question:'Ein Frosch ist grün.',illustration:'🐸',answers:['Richtig','Falsch'],correct:0,explanation:'Ja, viele Frösche sind grün! 🐸'},
+        {type:'multiple',question:'Was ist GRÜN?',illustration:'🎨',answers:['Die Sonne','Ein Kürbis','Ein Baum','Der Mond'],correct:2,explanation:'Bäume sind grün! 🌳'},
+        {type:'truefalse',question:'Eine Karotte ist orange.',illustration:'🥕',answers:['Richtig','Falsch'],correct:0,explanation:'Genau! Karotten sind orange. 🥕'},
+      ],
+      // Lektion 2: Mischen von Farben
+      [
+        {type:'multiple',question:'Was entsteht, wenn man Blau und Gelb mischt?',illustration:'🎨',answers:['Rot','Orange','Grün','Lila'],correct:2,explanation:'Blau + Gelb = Grün! 🟢'},
+        {type:'multiple',question:'Was entsteht, wenn man Rot und Gelb mischt?',illustration:'🎨',answers:['Blau','Orange','Grün','Lila'],correct:1,explanation:'Rot + Gelb = Orange! 🟠'},
+        {type:'multiple',question:'Was entsteht, wenn man Rot und Blau mischt?',illustration:'🎨',answers:['Grün','Orange','Gelb','Lila'],correct:3,explanation:'Rot + Blau = Lila! 🟣'},
+        {type:'truefalse',question:'Wenn man alle Farben mischt, entsteht ein sehr dunkles Braun.',illustration:'🎨',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Viele Farben gemischt werden dunkel braun.'},
+        {type:'multiple',question:'Welche zwei Farben muss man mischen, um Grün zu bekommen?',illustration:'🖌️',answers:['Rot + Blau','Blau + Gelb','Rot + Gelb','Blau + Weiß'],correct:1,explanation:'Blau und Gelb ergeben Grün! 🌿'},
+      ],
+      // Lektion 3: Farben im Alltag
+      [
+        {type:'multiple',question:'Welche Farbe bedeutet bei der Ampel STOPP?',illustration:'🚦',answers:['Grün','Gelb','Blau','Rot'],correct:3,explanation:'Rot bedeutet Stopp! 🛑'},
+        {type:'multiple',question:'Welche Farbe bedeutet bei der Ampel GEHEN?',illustration:'🚦',answers:['Rot','Blau','Grün','Orange'],correct:2,explanation:'Grün bedeutet: Gehen ist sicher! ✅'},
+        {type:'multiple',question:'Welche Farbe hat ein Feuerwehrauto?',illustration:'🚒',answers:['Blau','Grün','Gelb','Rot'],correct:3,explanation:'Feuerwehrautos sind rot! 🚒'},
+        {type:'multiple',question:'Welche Farbe hat der Krankenwagen oft?',illustration:'🚑',answers:['Rot','Weiß','Grün','Blau'],correct:1,explanation:'Krankenwagen sind oft weiß mit bunten Streifen! 🚑'},
+        {type:'truefalse',question:'Das Polizeiauto in Deutschland ist blau und silber.',illustration:'🚔',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Polizeiautos sind blau-silber. 🚔'},
+      ],
+    ],
+    tiere: [
+      // Lektion 0: Haustiere
+      [
+        {type:'multiple',question:'Welches Tier bellt?',illustration:'🐕',answers:['Katze','Hund','Fisch','Vogel'],correct:1,explanation:'Hunde bellen – Wau Wau! 🐕'},
+        {type:'multiple',question:'Was frisst eine Katze am liebsten?',illustration:'🐱',answers:['Karotten','Brot','Fisch','Äpfel'],correct:2,explanation:'Katzen mögen Fisch! 🐟'},
+        {type:'truefalse',question:'Ein Goldfisch lebt im Wasser.',illustration:'🐠',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Fische brauchen Wasser zum Leben. 🐠'},
+        {type:'multiple',question:'Welches Tier schnurrt?',illustration:'😺',answers:['Hund','Hamster','Katze','Vogel'],correct:2,explanation:'Katzen schnurren wenn sie glücklich sind! 😺'},
+        {type:'multiple',question:'Was braucht ein Hund jeden Tag?',illustration:'🦮',answers:['Einen Spaziergang','Einen Computer','Einen Fernseher','Bücher'],correct:0,explanation:'Hunde brauchen täglichen Auslauf! 🦮'},
+      ],
+      // Lektion 1: Bauernhoftiere
+      [
+        {type:'multiple',question:'Welches Tier gibt uns Milch?',illustration:'🐄',answers:['Huhn','Kuh','Pferd','Schwein'],correct:1,explanation:'Die Kuh gibt uns Milch! 🐄'},
+        {type:'multiple',question:'Was macht ein Hahn morgens?',illustration:'🐓',answers:['Schlafen','Krähen','Schwimmen','Bellen'],correct:1,explanation:'Der Hahn kräht morgens! 🐓'},
+        {type:'multiple',question:'Welches Tier legt Eier auf dem Bauernhof?',illustration:'🥚',answers:['Kuh','Pferd','Huhn','Schaf'],correct:2,explanation:'Hühner legen Eier! 🥚'},
+        {type:'truefalse',question:'Schafe geben uns Wolle für warme Kleidung.',illustration:'🐑',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Aus Schafwolle macht man Pullover und Socken. 🧶'},
+        {type:'multiple',question:'Wie heißt das Baby einer Kuh?',illustration:'🐮',answers:['Ferkel','Küken','Kalb','Fohlen'],correct:2,explanation:'Das Baby der Kuh heißt Kalb! 🐮'},
+      ],
+      // Lektion 2: Wildtiere
+      [
+        {type:'multiple',question:'Welches Tier ist das größte Landtier der Welt?',illustration:'🐘',answers:['Löwe','Elefant','Giraffe','Nashorn'],correct:1,explanation:'Der Elefant ist das größte Landtier! 🐘'},
+        {type:'multiple',question:'Welches Tier hat einen sehr langen Hals?',illustration:'🦒',answers:['Zebra','Elefant','Giraffe','Löwe'],correct:2,explanation:'Die Giraffe hat den längsten Hals! 🦒'},
+        {type:'truefalse',question:'Ein Löwe ist ein Raubtier.',illustration:'🦁',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Löwen jagen andere Tiere. 🦁'},
+        {type:'multiple',question:'Wo lebt ein Pinguin?',illustration:'🐧',answers:['In der Wüste','In der Arktis/Antarktis','Im Regenwald','Im Meer'],correct:1,explanation:'Pinguine leben in sehr kalten Gegenden! 🐧'},
+        {type:'multiple',question:'Was fressen Pandas?',illustration:'🐼',answers:['Fleisch','Fisch','Bambus','Äpfel'],correct:2,explanation:'Pandas fressen fast nur Bambus! 🎋'},
+      ],
+      // Lektion 3: Wassertiere
+      [
+        {type:'multiple',question:'Welches Tier ist das größte Tier der Welt?',illustration:'🐋',answers:['Hai','Delfin','Blauwal','Oktopus'],correct:2,explanation:'Der Blauwal ist das größte Tier auf der Erde! 🐋'},
+        {type:'truefalse',question:'Delfine sind Fische.',illustration:'🐬',answers:['Richtig','Falsch'],correct:1,explanation:'Nein! Delfine sind Säugetiere, keine Fische. 🐬'},
+        {type:'multiple',question:'Wie viele Arme hat ein Oktopus?',illustration:'🐙',answers:['4','6','8','10'],correct:2,explanation:'Ein Oktopus hat 8 Arme! 🐙'},
+        {type:'multiple',question:'Was hat ein Fisch statt Lungen?',illustration:'🐟',answers:['Flossen','Kiemen','Schuppen','Flügel'],correct:1,explanation:'Fische atmen durch Kiemen! 🐟'},
+        {type:'truefalse',question:'Haie sind gefährliche Raubtiere.',illustration:'🦈',answers:['Richtig','Falsch'],correct:0,explanation:'Ja, Haie sind Raubtiere – aber sie greifen Menschen selten an. 🦈'},
+      ],
+      // Lektion 4: Vögel
+      [
+        {type:'multiple',question:'Welcher Vogel kann NICHT fliegen?',illustration:'🐧',answers:['Adler','Pinguin','Schwalbe','Spatz'],correct:1,explanation:'Pinguine können nicht fliegen! 🐧'},
+        {type:'multiple',question:'Was baut ein Vogel für seine Eier?',illustration:'🪺',answers:['Eine Höhle','Ein Nest','Ein Loch','Ein Haus'],correct:1,explanation:'Vögel bauen Nester! 🪺'},
+        {type:'truefalse',question:'Eulen sind nachtaktiv – sie schlafen tagsüber.',illustration:'🦉',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Eulen sind nachts aktiv und schlafen am Tag. 🦉'},
+        {type:'multiple',question:'Welcher Vogel ist für seinen bunten Schwanz bekannt?',illustration:'🦚',answers:['Spatz','Pfau','Amsel','Schwalbe'],correct:1,explanation:'Der Pfau hat einen wunderschönen Schwanz! 🦚'},
+        {type:'multiple',question:'Womit fliegen Vögel?',illustration:'🐦',answers:['Mit Flossen','Mit den Beinen','Mit Flügeln','Mit dem Schwanz'],correct:2,explanation:'Vögel fliegen mit ihren Flügeln! 🐦'},
+      ],
+    ],
+    zahlen: [
+      // Lektion 0: Zahlen 1–3
+      [
+        {type:'multiple',question:'Wie viele Augen hat ein Mensch?',illustration:'👀',answers:['1','2','3','4'],correct:1,explanation:'Ein Mensch hat 2 Augen! 👀'},
+        {type:'multiple',question:'Wie viele Ohren hat ein Hase?',illustration:'🐰',answers:['1','3','2','4'],correct:2,explanation:'Ein Hase hat 2 Ohren! 🐰'},
+        {type:'multiple',question:'Zähle die Äpfel: 🍎🍎🍎 – Wie viele sind es?',illustration:'🍎',answers:['1','2','3','4'],correct:2,explanation:'Es sind 3 Äpfel! 🍎🍎🍎'},
+        {type:'truefalse',question:'1 + 1 = 2',illustration:'➕',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Eins plus eins ergibt zwei. ✌️'},
+        {type:'multiple',question:'Was kommt nach der Zahl 2?',illustration:'🔢',answers:['1','4','2','3'],correct:3,explanation:'Nach der 2 kommt die 3! 3️⃣'},
+      ],
+      // Lektion 1: Zahlen 4–6
+      [
+        {type:'multiple',question:'Wie viele Beine hat ein Hund?',illustration:'🐕',answers:['2','6','4','8'],correct:2,explanation:'Ein Hund hat 4 Beine! 🐕'},
+        {type:'multiple',question:'Zähle: 🌟🌟🌟🌟🌟 – Wie viele Sterne sind das?',illustration:'⭐',answers:['4','5','6','3'],correct:1,explanation:'Es sind 5 Sterne! ⭐⭐⭐⭐⭐'},
+        {type:'multiple',question:'Was kommt nach der 5?',illustration:'🔢',answers:['4','7','6','8'],correct:2,explanation:'Nach der 5 kommt die 6! 6️⃣'},
+        {type:'truefalse',question:'4 ist mehr als 6.',illustration:'🔢',answers:['Richtig','Falsch'],correct:1,explanation:'Nein! 6 ist größer als 4. 6 > 4'},
+        {type:'multiple',question:'Wie viele Finger hat eine Hand?',illustration:'✋',answers:['4','6','3','5'],correct:3,explanation:'Eine Hand hat 5 Finger! ✋'},
+      ],
+      // Lektion 2: Zahlen 7–10
+      [
+        {type:'multiple',question:'Wie viele Tage hat eine Woche?',illustration:'📅',answers:['5','6','8','7'],correct:3,explanation:'Eine Woche hat 7 Tage! 📅'},
+        {type:'multiple',question:'Zähle: 🍭🍭🍭🍭🍭🍭🍭🍭 – Wie viele?',illustration:'🍭',answers:['7','9','8','6'],correct:2,explanation:'Es sind 8 Bonbons! 🍭'},
+        {type:'multiple',question:'Was kommt nach der 9?',illustration:'🔢',answers:['8','11','10','7'],correct:2,explanation:'Nach der 9 kommt die 10! 🔟'},
+        {type:'truefalse',question:'7 + 3 = 10',illustration:'➕',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Sieben plus drei ergibt zehn. 🔟'},
+        {type:'multiple',question:'Wie viele Finger haben beide Hände zusammen?',illustration:'👐',answers:['8','10','9','6'],correct:1,explanation:'Beide Hände haben zusammen 10 Finger! 👐'},
+      ],
+      // Lektion 3: Zählen üben
+      [
+        {type:'multiple',question:'Welche Zahl ist die größte?',illustration:'🔢',answers:['3','7','5','9'],correct:3,explanation:'9 ist die größte Zahl in dieser Auswahl! 9️⃣'},
+        {type:'multiple',question:'Welche Zahl ist die kleinste?',illustration:'🔢',answers:['8','4','2','6'],correct:2,explanation:'2 ist die kleinste Zahl! 2️⃣'},
+        {type:'multiple',question:'Was ergibt 3 + 2?',illustration:'➕',answers:['4','6','5','7'],correct:2,explanation:'3 + 2 = 5! ✅'},
+        {type:'truefalse',question:'10 ist die größte einstellige Zahl.',illustration:'🔢',answers:['Richtig','Falsch'],correct:1,explanation:'Nein! 9 ist die größte einstellige Zahl. 10 hat schon zwei Stellen.'},
+        {type:'multiple',question:'Wie viel ist 5 – 2?',illustration:'➖',answers:['2','4','3','1'],correct:2,explanation:'5 minus 2 ergibt 3! ✅'},
+      ],
+    ],
+    buchstaben: [
+      // Lektion 0: A, B, C
+      [
+        {type:'multiple',question:'Welcher Buchstabe kommt zuerst im Alphabet?',illustration:'🔤',answers:['B','C','A','D'],correct:2,explanation:'A ist der erste Buchstabe im Alphabet! 🔤'},
+        {type:'multiple',question:'Womit beginnt das Wort „Apfel"?',illustration:'🍎',answers:['B','A','C','E'],correct:1,explanation:'Apfel beginnt mit A! 🍎'},
+        {type:'multiple',question:'Womit beginnt das Wort „Ball"?',illustration:'⚽',answers:['A','C','D','B'],correct:3,explanation:'Ball beginnt mit B! ⚽'},
+        {type:'truefalse',question:'Das C klingt manchmal wie ein K.',illustration:'🔤',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Wie in „Computer" oder „Clown". 🤡'},
+        {type:'multiple',question:'Womit beginnt das Wort „Clown"?',illustration:'🤡',answers:['A','B','C','D'],correct:2,explanation:'Clown beginnt mit C! 🤡'},
+      ],
+      // Lektion 1: D, E, F
+      [
+        {type:'multiple',question:'Womit beginnt das Wort „Dach"?',illustration:'🏠',answers:['E','F','D','B'],correct:2,explanation:'Dach beginnt mit D! 🏠'},
+        {type:'multiple',question:'Womit beginnt das Wort „Elefant"?',illustration:'🐘',answers:['A','E','F','I'],correct:1,explanation:'Elefant beginnt mit E! 🐘'},
+        {type:'multiple',question:'Womit beginnt das Wort „Fisch"?',illustration:'🐟',answers:['E','D','G','F'],correct:3,explanation:'Fisch beginnt mit F! 🐟'},
+        {type:'truefalse',question:'Das Wort „Ente" beginnt mit E.',illustration:'🦆',answers:['Richtig','Falsch'],correct:0,explanation:'Richtig! E-nte beginnt mit E. 🦆'},
+        {type:'multiple',question:'Welcher Buchstabe fehlt? A B C _ E F',illustration:'🔤',answers:['G','D','H','B'],correct:1,explanation:'D fehlt! A B C D E F – so ist das Alphabet. 🔤'},
+      ],
+      // Lektion 2: G, H, I
+      [
+        {type:'multiple',question:'Womit beginnt das Wort „Hund"?',illustration:'🐕',answers:['G','I','J','H'],correct:3,explanation:'Hund beginnt mit H! 🐕'},
+        {type:'multiple',question:'Womit beginnt das Wort „Igel"?',illustration:'🦔',answers:['H','J','I','G'],correct:2,explanation:'Igel beginnt mit I! 🦔'},
+        {type:'multiple',question:'Womit beginnt das Wort „Giraffe"?',illustration:'🦒',answers:['H','G','I','F'],correct:1,explanation:'Giraffe beginnt mit G! 🦒'},
+        {type:'truefalse',question:'Das Wort „Haus" beginnt mit H.',illustration:'🏠',answers:['Richtig','Falsch'],correct:0,explanation:'Richtig! H-aus beginnt mit H. 🏠'},
+        {type:'multiple',question:'Wie viele Buchstaben hat das Wort „Hi"?',illustration:'👋',answers:['3','4','1','2'],correct:3,explanation:'„Hi" hat 2 Buchstaben: H und I! 👋'},
+      ],
+      // Lektion 3: Mein Name
+      [
+        {type:'multiple',question:'Mit welchem Buchstaben beginnen Namen meistens?',illustration:'✍️',answers:['Kleinbuchstaben','Großbuchstaben','Zahlen','Punkten'],correct:1,explanation:'Namen beginnen immer mit einem Großbuchstaben! ✍️'},
+        {type:'truefalse',question:'Jeder Mensch hat einen Namen.',illustration:'👤',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Jeder Mensch hat einen Namen. 👤'},
+        {type:'multiple',question:'Womit beginnt der Name „Anna"?',illustration:'👧',answers:['E','A','O','I'],correct:1,explanation:'Anna beginnt mit A! 👧'},
+        {type:'multiple',question:'Wie schreibt man seinen Namen?',illustration:'✏️',answers:['Immer klein','Mit Großbuchstabe am Anfang','Nur in Großbuchstaben','Mit Zahlen'],correct:1,explanation:'Namen beginnen mit einem großen Anfangsbuchstaben! ✏️'},
+        {type:'truefalse',question:'Der Name „Max" hat 3 Buchstaben.',illustration:'🔤',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! M-a-x – das sind 3 Buchstaben. ✅'},
+      ],
+    ],
+    formen: [
+      // Lektion 0: Kreis & Quadrat
+      [
+        {type:'multiple',question:'Wie viele Ecken hat ein Quadrat?',illustration:'🟥',answers:['3','5','4','6'],correct:2,explanation:'Ein Quadrat hat 4 Ecken! 🟥'},
+        {type:'multiple',question:'Wie viele Ecken hat ein Kreis?',illustration:'⭕',answers:['1','4','3','0'],correct:3,explanation:'Ein Kreis hat keine Ecken! ⭕'},
+        {type:'multiple',question:'Welche Form ist rund?',illustration:'🎨',answers:['Quadrat','Dreieck','Kreis','Rechteck'],correct:2,explanation:'Der Kreis ist rund! ⭕'},
+        {type:'truefalse',question:'Ein Quadrat hat 4 gleich lange Seiten.',illustration:'🟦',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Alle vier Seiten eines Quadrats sind gleich lang. ✅'},
+        {type:'multiple',question:'Was hat die Form eines Kreises?',illustration:'🌕',answers:['Ein Buch','Ein Fenster','Der Mond','Eine Tür'],correct:2,explanation:'Der Vollmond hat die Form eines Kreises! 🌕'},
+      ],
+      // Lektion 1: Dreieck & Rechteck
+      [
+        {type:'multiple',question:'Wie viele Ecken hat ein Dreieck?',illustration:'🔺',answers:['4','2','3','5'],correct:2,explanation:'Ein Dreieck hat 3 Ecken! 🔺'},
+        {type:'multiple',question:'Was hat die Form eines Dreiecks?',illustration:'🎄',answers:['Ein Rad','Ein Fenster','Ein Weihnachtsbaum','Ein Ball'],correct:2,explanation:'Ein Weihnachtsbaum hat oft die Form eines Dreiecks! 🎄'},
+        {type:'truefalse',question:'Ein Rechteck hat 4 Ecken.',illustration:'▬',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Rechtecke haben 4 Ecken, wie Quadrate – aber die Seiten sind unterschiedlich lang. ✅'},
+        {type:'multiple',question:'Was hat die Form eines Rechtecks?',illustration:'📱',answers:['Ein Ball','Ein Smartphone','Ein Apfel','Eine Pizza'],correct:1,explanation:'Ein Smartphone hat meist die Form eines Rechtecks! 📱'},
+        {type:'multiple',question:'Wie viele Seiten hat ein Dreieck?',illustration:'🔺',answers:['4','2','5','3'],correct:3,explanation:'Ein Dreieck hat 3 Seiten! 🔺'},
+      ],
+      // Lektion 2: Formen in der Natur
+      [
+        {type:'multiple',question:'Welche Form hat die Sonne oft in Zeichnungen?',illustration:'☀️',answers:['Quadrat','Dreieck','Kreis','Rechteck'],correct:2,explanation:'Die Sonne wird oft als Kreis gezeichnet! ☀️'},
+        {type:'multiple',question:'Welche Form haben viele Blätter?',illustration:'🍃',answers:['Kreis','Oval/Ei-Form','Quadrat','Stern'],correct:1,explanation:'Viele Blätter haben eine ovale Form! 🍃'},
+        {type:'truefalse',question:'Schneeflocken haben oft eine sechseckige Form.',illustration:'❄️',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Schneeflocken haben wunderschöne Sechseck-Muster. ❄️'},
+        {type:'multiple',question:'Welche Form hat ein Ei?',illustration:'🥚',answers:['Quadrat','Kreis','Oval','Dreieck'],correct:2,explanation:'Ein Ei hat eine ovale Form! 🥚'},
+        {type:'multiple',question:'Welche Form haben die meisten Baumstämme?',illustration:'🌲',answers:['Quadrat','Dreieck','Rechteck','Kreis (rund)'],correct:3,explanation:'Baumstämme sind rund! 🌲'},
+      ],
+    ],
+    koerper: [
+      // Lektion 0: Kopf & Gesicht
+      [
+        {type:'multiple',question:'Womit siehst du?',illustration:'👀',answers:['Mit dem Ohr','Mit der Nase','Mit den Augen','Mit dem Mund'],correct:2,explanation:'Mit den Augen kannst du sehen! 👀'},
+        {type:'multiple',question:'Womit riechst du?',illustration:'👃',answers:['Mit den Augen','Mit der Nase','Mit dem Ohr','Mit dem Mund'],correct:1,explanation:'Mit der Nase kannst du riechen! 👃'},
+        {type:'multiple',question:'Womit hörst du?',illustration:'👂',answers:['Mit den Augen','Mit dem Mund','Mit den Ohren','Mit der Nase'],correct:2,explanation:'Mit den Ohren kannst du hören! 👂'},
+        {type:'truefalse',question:'Der Mund wird auch zum Sprechen benutzt.',illustration:'👄',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Mit dem Mund sprichst, isst und trinkst du. 👄'},
+        {type:'multiple',question:'Wie viele Augen hat ein Mensch normalerweise?',illustration:'👁️',answers:['1','3','4','2'],correct:3,explanation:'Ein Mensch hat 2 Augen! 👁️👁️'},
+      ],
+      // Lektion 1: Arme & Beine
+      [
+        {type:'multiple',question:'Wie viele Arme hat ein Mensch?',illustration:'💪',answers:['4','3','1','2'],correct:3,explanation:'Ein Mensch hat 2 Arme! 💪'},
+        {type:'multiple',question:'Womit greifst du Dinge auf?',illustration:'🤚',answers:['Mit den Füßen','Mit den Händen','Mit dem Kopf','Mit den Ohren'],correct:1,explanation:'Mit den Händen kannst du Dinge greifen! 🤚'},
+        {type:'multiple',question:'Wie viele Beine hat ein Mensch?',illustration:'🦵',answers:['4','3','2','1'],correct:2,explanation:'Ein Mensch hat 2 Beine! 🦵🦵'},
+        {type:'truefalse',question:'Menschen laufen auf zwei Beinen.',illustration:'🚶',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Menschen sind Zweibeiner. 🚶'},
+        {type:'multiple',question:'Was sind die Zehen?',illustration:'🦶',answers:['Finger an der Hand','Zähne im Mund','Finger am Fuß','Teile des Ohrs'],correct:2,explanation:'Zehen sind die „Finger" am Fuß! 🦶'},
+      ],
+      // Lektion 2: Innere Organe (einfach)
+      [
+        {type:'multiple',question:'Was pumpt das Blut durch deinen Körper?',illustration:'❤️',answers:['Die Lunge','Das Gehirn','Der Magen','Das Herz'],correct:3,explanation:'Das Herz pumpt das Blut durch deinen Körper! ❤️'},
+        {type:'multiple',question:'Womit atmest du?',illustration:'🫁',answers:['Mit dem Herz','Mit dem Magen','Mit der Lunge','Mit dem Gehirn'],correct:2,explanation:'Mit der Lunge atmest du! 🫁'},
+        {type:'multiple',question:'Was macht der Magen?',illustration:'😋',answers:['Pumpt Blut','Verdaut das Essen','Atmet Luft','Denkt nach'],correct:1,explanation:'Der Magen verdaut dein Essen! 😋'},
+        {type:'truefalse',question:'Das Herz hört niemals auf zu schlagen.',illustration:'💓',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Das Herz schlägt dein ganzes Leben lang – auch im Schlaf. 💓'},
+        {type:'multiple',question:'Womit denkst du nach?',illustration:'🧠',answers:['Mit dem Herz','Mit dem Magen','Mit der Lunge','Mit dem Gehirn'],correct:3,explanation:'Mit dem Gehirn kannst du denken, fühlen und träumen! 🧠'},
+      ],
+    ],
+  },
+
+  junior: {
+    mathe: [
+      [{type:'multiple',question:'Was ergibt 8 + 5?',illustration:'➕',answers:['11','12','13','14'],correct:2,explanation:'8 + 5 = 13! Zähle einfach weiter: 8…9,10,11,12,13'},
+       {type:'multiple',question:'Was ergibt 7 + 6?',illustration:'➕',answers:['11','12','13','14'],correct:2,explanation:'7 + 6 = 13! ✅'},
+       {type:'truefalse',question:'9 + 9 = 18',illustration:'➕',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! 9 + 9 = 18 ✅'},
+       {type:'multiple',question:'Was ergibt 6 + 8?',illustration:'➕',answers:['13','14','15','16'],correct:1,explanation:'6 + 8 = 14 ✅'},
+       {type:'multiple',question:'Was ergibt 9 + 7?',illustration:'➕',answers:['14','15','16','17'],correct:2,explanation:'9 + 7 = 16 ✅'}],
+      [{type:'multiple',question:'Was ergibt 15 – 7?',illustration:'➖',answers:['6','7','8','9'],correct:2,explanation:'15 – 7 = 8 ✅'},
+       {type:'multiple',question:'Was ergibt 13 – 6?',illustration:'➖',answers:['5','6','7','8'],correct:2,explanation:'13 – 6 = 7 ✅'},
+       {type:'truefalse',question:'20 – 8 = 12',illustration:'➖',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! 20 – 8 = 12 ✅'},
+       {type:'multiple',question:'Was ergibt 18 – 9?',illustration:'➖',answers:['7','8','9','10'],correct:2,explanation:'18 – 9 = 9 ✅'},
+       {type:'multiple',question:'Was ergibt 16 – 8?',illustration:'➖',answers:['6','7','8','9'],correct:2,explanation:'16 – 8 = 8 ✅'}],
+      [{type:'multiple',question:'Was ergibt 34 + 25?',illustration:'➕',answers:['57','58','59','60'],correct:2,explanation:'34 + 25 = 59 ✅'},
+       {type:'multiple',question:'Was ergibt 47 + 32?',illustration:'➕',answers:['77','78','79','80'],correct:2,explanation:'47 + 32 = 79 ✅'},
+       {type:'truefalse',question:'50 + 50 = 100',illustration:'➕',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! 50 + 50 = 100 ✅'},
+       {type:'multiple',question:'Was ergibt 63 + 28?',illustration:'➕',answers:['89','90','91','92'],correct:2,explanation:'63 + 28 = 91 ✅'},
+       {type:'multiple',question:'Was ergibt 45 + 37?',illustration:'➕',answers:['80','81','82','83'],correct:2,explanation:'45 + 37 = 82 ✅'}],
+      [{type:'multiple',question:'Was ergibt 80 – 35?',illustration:'➖',answers:['43','44','45','46'],correct:2,explanation:'80 – 35 = 45 ✅'},
+       {type:'multiple',question:'Was ergibt 92 – 47?',illustration:'➖',answers:['43','44','45','46'],correct:2,explanation:'92 – 47 = 45 ✅'},
+       {type:'truefalse',question:'100 – 60 = 40',illustration:'➖',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! 100 – 60 = 40 ✅'},
+       {type:'multiple',question:'Was ergibt 73 – 28?',illustration:'➖',answers:['43','44','45','46'],correct:2,explanation:'73 – 28 = 45 ✅'},
+       {type:'multiple',question:'Was ergibt 61 – 34?',illustration:'➖',answers:['25','26','27','28'],correct:2,explanation:'61 – 34 = 27 ✅'}],
+      [{type:'multiple',question:'Was ergibt 2 × 5?',illustration:'✖️',answers:['8','9','10','11'],correct:2,explanation:'2 × 5 = 10 ✅'},
+       {type:'multiple',question:'Was ergibt 5 × 4?',illustration:'✖️',answers:['18','19','20','21'],correct:2,explanation:'5 × 4 = 20 ✅'},
+       {type:'truefalse',question:'2 × 7 = 14',illustration:'✖️',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! 2 × 7 = 14 ✅'},
+       {type:'multiple',question:'Was ergibt 5 × 7?',illustration:'✖️',answers:['33','34','35','36'],correct:2,explanation:'5 × 7 = 35 ✅'},
+       {type:'multiple',question:'Was ergibt 2 × 9?',illustration:'✖️',answers:['16','17','18','19'],correct:2,explanation:'2 × 9 = 18 ✅'}],
+      [{type:'multiple',question:'Was ergibt 3 × 4?',illustration:'✖️',answers:['10','11','12','13'],correct:2,explanation:'3 × 4 = 12 ✅'},
+       {type:'multiple',question:'Was ergibt 4 × 6?',illustration:'✖️',answers:['22','23','24','25'],correct:2,explanation:'4 × 6 = 24 ✅'},
+       {type:'truefalse',question:'3 × 9 = 27',illustration:'✖️',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! 3 × 9 = 27 ✅'},
+       {type:'multiple',question:'Was ergibt 4 × 8?',illustration:'✖️',answers:['30','31','32','33'],correct:2,explanation:'4 × 8 = 32 ✅'},
+       {type:'multiple',question:'Was ergibt 3 × 7?',illustration:'✖️',answers:['19','20','21','22'],correct:2,explanation:'3 × 7 = 21 ✅'}],
+    ],
+    englisch: [
+      [{type:'multiple',question:'How do you say "Hallo" in English?',illustration:'👋',answers:['Bye','Hello','Thanks','Sorry'],correct:1,explanation:'"Hello" bedeutet Hallo! 👋'},
+       {type:'multiple',question:'How do you say "Auf Wiedersehen" in English?',illustration:'👋',answers:['Hello','Please','Goodbye','Thanks'],correct:2,explanation:'"Goodbye" bedeutet Auf Wiedersehen! 👋'},
+       {type:'truefalse',question:'"Good morning" bedeutet "Guten Morgen".',illustration:'🌅',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Good morning = Guten Morgen. 🌅'},
+       {type:'multiple',question:'Was bedeutet "Thank you"?',illustration:'🙏',answers:['Bitte','Entschuldigung','Danke','Hallo'],correct:2,explanation:'"Thank you" bedeutet Danke! 🙏'},
+       {type:'multiple',question:'Was bedeutet "Please"?',illustration:'🙏',answers:['Danke','Tschüss','Hallo','Bitte'],correct:3,explanation:'"Please" bedeutet Bitte! 🙏'}],
+      [{type:'multiple',question:'What is "drei" in English?',illustration:'3️⃣',answers:['Two','Four','Three','Five'],correct:2,explanation:'"Three" bedeutet drei! 3️⃣'},
+       {type:'multiple',question:'What is "sieben" in English?',illustration:'7️⃣',answers:['Six','Eight','Nine','Seven'],correct:3,explanation:'"Seven" bedeutet sieben! 7️⃣'},
+       {type:'truefalse',question:'"Ten" bedeutet zehn.',illustration:'🔟',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Ten = zehn. 🔟'},
+       {type:'multiple',question:'What comes after "four"?',illustration:'5️⃣',answers:['Three','Six','Five','Seven'],correct:2,explanation:'After four comes five! Nach vier kommt fünf. 5️⃣'},
+       {type:'multiple',question:'How many is "eight"?',illustration:'8️⃣',answers:['6','7','9','8'],correct:3,explanation:'"Eight" ist die Zahl 8! 8️⃣'}],
+      [{type:'multiple',question:'What color is the sky?',illustration:'☀️',answers:['Red','Green','Yellow','Blue'],correct:3,explanation:'The sky is blue! Der Himmel ist blau. 💙'},
+       {type:'multiple',question:'Was bedeutet "red"?',illustration:'🔴',answers:['Blau','Grün','Rot','Gelb'],correct:2,explanation:'"Red" bedeutet rot! 🔴'},
+       {type:'truefalse',question:'"Green" bedeutet grün.',illustration:'🟢',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Green = grün. 🟢'},
+       {type:'multiple',question:'What color is a banana?',illustration:'🍌',answers:['Red','Blue','Green','Yellow'],correct:3,explanation:'A banana is yellow! Eine Banane ist gelb. 💛'},
+       {type:'multiple',question:'Was bedeutet "white"?',illustration:'⬜',answers:['Schwarz','Grau','Weiß','Blau'],correct:2,explanation:'"White" bedeutet weiß! ⬜'}],
+      [{type:'multiple',question:'What is "Mutter" in English?',illustration:'👩',answers:['Father','Sister','Brother','Mother'],correct:3,explanation:'"Mother" bedeutet Mutter! 👩'},
+       {type:'multiple',question:'Was bedeutet "brother"?',illustration:'👦',answers:['Schwester','Vater','Bruder','Mutter'],correct:2,explanation:'"Brother" bedeutet Bruder! 👦'},
+       {type:'truefalse',question:'"Sister" bedeutet Schwester.',illustration:'👧',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Sister = Schwester. 👧'},
+       {type:'multiple',question:'What is "Vater" in English?',illustration:'👨',answers:['Mother','Brother','Sister','Father'],correct:3,explanation:'"Father" bedeutet Vater! 👨'},
+       {type:'multiple',question:'Was bedeutet "family"?',illustration:'👨‍👩‍👧‍👦',answers:['Schule','Freund','Familie','Haus'],correct:2,explanation:'"Family" bedeutet Familie! 👨‍👩‍👧‍👦'}],
+      [{type:'multiple',question:'What animal says "Moo"?',illustration:'🐄',answers:['Dog','Cat','Cow','Horse'],correct:2,explanation:'The cow says Moo! Die Kuh macht Muh. 🐄'},
+       {type:'multiple',question:'Was bedeutet "dog"?',illustration:'🐕',answers:['Katze','Pferd','Hund','Vogel'],correct:2,explanation:'"Dog" bedeutet Hund! 🐕'},
+       {type:'truefalse',question:'"Cat" bedeutet Katze.',illustration:'🐱',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Cat = Katze. 🐱'},
+       {type:'multiple',question:'What is "Vogel" in English?',illustration:'🐦',answers:['Fish','Bird','Horse','Frog'],correct:1,explanation:'"Bird" bedeutet Vogel! 🐦'},
+       {type:'multiple',question:'Was bedeutet "fish"?',illustration:'🐟',answers:['Vogel','Hund','Fisch','Pferd'],correct:2,explanation:'"Fish" bedeutet Fisch! 🐟'}],
+    ],
+  },
+
+  mittel: {
+    mathe: [
+      [{type:'multiple',question:'Was ist ½ als Dezimalzahl?',illustration:'½',answers:['0,2','0,25','0,5','0,75'],correct:2,explanation:'½ = 0,5 ✅'},
+       {type:'multiple',question:'Was ergibt ¼ + ¼?',illustration:'➕',answers:['¼','½','¾','1'],correct:1,explanation:'¼ + ¼ = ½ ✅'},
+       {type:'truefalse',question:'¾ ist größer als ½.',illustration:'🔢',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! ¾ = 0,75 und ½ = 0,5. Also ist ¾ größer. ✅'},
+       {type:'multiple',question:'Welcher Bruch ist am größten?',illustration:'🔢',answers:['⅓','¼','½','⅛'],correct:2,explanation:'½ ist am größten (= 0,5). ✅'},
+       {type:'multiple',question:'Was ergibt ⅓ + ⅓?',illustration:'➕',answers:['⅓','½','⅔','1'],correct:2,explanation:'⅓ + ⅓ = ⅔ ✅'}],
+      [{type:'multiple',question:'Was ergibt ½ + ¼?',illustration:'➕',answers:['¼','½','¾','1'],correct:2,explanation:'½ + ¼ = ²⁄₄ + ¼ = ¾ ✅'},
+       {type:'multiple',question:'Was ergibt ⅔ + ⅓?',illustration:'➕',answers:['⅔','⅚','1','1⅓'],correct:2,explanation:'⅔ + ⅓ = 3/3 = 1 ✅'},
+       {type:'truefalse',question:'¼ + ¾ = 1',illustration:'➕',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! ¼ + ¾ = 4/4 = 1 ✅'},
+       {type:'multiple',question:'Was ergibt 1½ + ½?',illustration:'➕',answers:['1','1½','2','2½'],correct:2,explanation:'1½ + ½ = 2 ✅'},
+       {type:'multiple',question:'Was ergibt ⅝ + ⅜?',illustration:'➕',answers:['⅞','1','1⅛','¾'],correct:1,explanation:'⅝ + ⅜ = 8/8 = 1 ✅'}],
+      [{type:'multiple',question:'Wie schreibt man 0,75 als Bruch?',illustration:'🔢',answers:['½','⅔','¾','⅘'],correct:2,explanation:'0,75 = ¾ ✅'},
+       {type:'multiple',question:'Was ist 1,5 als gemischte Zahl?',illustration:'🔢',answers:['1¼','1½','1¾','2'],correct:1,explanation:'1,5 = 1½ ✅'},
+       {type:'truefalse',question:'0,3 ist kleiner als 0,31.',illustration:'🔢',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! 0,30 < 0,31 ✅'},
+       {type:'multiple',question:'Was ergibt 2,5 + 1,5?',illustration:'➕',answers:['3','3,5','4','4,5'],correct:2,explanation:'2,5 + 1,5 = 4 ✅'},
+       {type:'multiple',question:'Wie viele Stellen hat 3,14 nach dem Komma?',illustration:'🔢',answers:['1','3','2','4'],correct:2,explanation:'3,14 hat 2 Dezimalstellen: 1 und 4. ✅'}],
+    ],
+    deutsch: [
+      [{type:'multiple',question:'Was ist ein Nomen (Substantiv)?',illustration:'📝',answers:['Ein Tunwort','Ein Namenwort (Ding, Person, Tier, Ort)','Ein Wiewort','Ein Verbindungswort'],correct:1,explanation:'Nomen sind Namenwörter: Hund, Schule, Anna, Berlin. Sie werden großgeschrieben! ✅'},
+       {type:'multiple',question:'Was ist ein Verb?',illustration:'📝',answers:['Ein Namenwort','Ein Wiewort','Ein Tunwort (Tätigkeit)','Ein Artikel'],correct:2,explanation:'Verben sind Tunwörter: laufen, essen, schlafen. ✅'},
+       {type:'truefalse',question:'Adjektive beschreiben Nomen (z.B. „der rote Ball").',illustration:'📝',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Adjektive sind Wiewörter – sie sagen, wie etwas ist. ✅'},
+       {type:'multiple',question:'Welches Wort ist ein Nomen?',illustration:'📝',answers:['laufen','schön','Schule','aber'],correct:2,explanation:'„Schule" ist ein Nomen – es wird großgeschrieben! ✅'},
+       {type:'multiple',question:'Welches Wort ist ein Verb?',illustration:'📝',answers:['Hund','blau','und','schwimmen'],correct:3,explanation:'„Schwimmen" ist ein Verb – es beschreibt eine Tätigkeit. ✅'}],
+      [{type:'multiple',question:'Was ist das Subjekt in einem Satz?',illustration:'📝',answers:['Die Tätigkeit im Satz','Das Wort, über das gesprochen wird','Eine Ortsangabe','Ein Adjektiv'],correct:1,explanation:'Das Subjekt ist das Wort, über das gesprochen wird – meist eine Person oder Sache. ✅'},
+       {type:'multiple',question:'Was ist das Prädikat?',illustration:'📝',answers:['Das Verb im Satz','Das Nomen','Die Ortsangabe','Der Artikel'],correct:0,explanation:'Das Prädikat ist das Verb – die Tätigkeit im Satz. ✅'},
+       {type:'truefalse',question:'Im Satz „Die Katze schläft." ist „schläft" das Prädikat.',illustration:'🐱',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! „Schläft" ist das Verb = Prädikat. ✅'},
+       {type:'multiple',question:'Was ist das Objekt im Satz?',illustration:'📝',answers:['Das Subjekt','Die Ergänzung (wen/was, wem)','Das Verb','Der Artikel'],correct:1,explanation:'Das Objekt ist die Ergänzung: „Sie liest ein Buch." – „ein Buch" ist das Objekt. ✅'},
+       {type:'multiple',question:'Finde das Subjekt: „Der Hund bellt laut."',illustration:'🐕',answers:['bellt','laut','Der','Der Hund'],correct:3,explanation:'„Der Hund" ist das Subjekt – über ihn wird gesprochen. ✅'}],
+    ],
+    englisch: [
+      [{type:'multiple',question:'Bilde Simple Past: „I (go) to school."',illustration:'🏫',answers:['I go','I goed','I went','I going'],correct:2,explanation:'"Go" ist unregelmäßig: Simple Past = „went". I went to school. ✅'},
+       {type:'multiple',question:'Was ist Simple Past von „play"?',illustration:'⚽',answers:['playd','played','plays','play'],correct:1,explanation:'Regelmäßige Verben: play → played. ✅'},
+       {type:'truefalse',question:'"She went to the cinema yesterday." ist grammatisch richtig.',illustration:'🎬',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! „Went" ist Simple Past von „go". ✅'},
+       {type:'multiple',question:'Was ist Simple Past von „eat"?',illustration:'🍕',answers:['eated','ate','eats','eating'],correct:1,explanation:'"Eat" ist unregelmäßig: Simple Past = „ate". ✅'},
+       {type:'multiple',question:'Wann benutzt man Simple Past?',illustration:'⏰',answers:['Für die Zukunft','Für Gewohnheiten jetzt','Für abgeschlossene Handlungen in der Vergangenheit','Für aktuelle Handlungen'],correct:2,explanation:'Simple Past = abgeschlossene Ereignisse in der Vergangenheit. ✅'}],
+    ],
+    geschichte: [
+      [{type:'multiple',question:'An welchem Fluss lag das alte Ägypten?',illustration:'🏺',answers:['Rhein','Donau','Nil','Amazonas'],correct:2,explanation:'Das alte Ägypten lag am Nil! Der Nil gab dem Land fruchtbaren Boden. 🏺'},
+       {type:'multiple',question:'Wie nannte man den Herrscher im alten Ägypten?',illustration:'👑',answers:['Kaiser','König','Pharao','Präsident'],correct:2,explanation:'Der Herrscher im alten Ägypten hieß Pharao! 👑'},
+       {type:'truefalse',question:'Die Pyramiden wurden als Grabmäler für die Pharaonen gebaut.',illustration:'🔺',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Die Pyramiden sind riesige Grabmäler. 🔺'},
+       {type:'multiple',question:'Was ist die Hieroglyphenschrift?',illustration:'𓂀',answers:['Eine Zahlensprache','Eine Bilderschrift der alten Ägypter','Eine moderne Schrift','Eine griechische Schrift'],correct:1,explanation:'Hieroglyphen sind die Bilderschrift der alten Ägypter! ✅'},
+       {type:'multiple',question:'Was ist die Sphinx?',illustration:'🗿',answers:['Ein ägyptischer Gott','Eine Pyramide','Eine Statue mit Menschenkopf und Löwenkörper','Ein Schiff'],correct:2,explanation:'Die Sphinx hat einen Menschenkopf und einen Löwenkörper. 🗿'}],
+    ],
+  },
+
+  profi: {
+    mathe: [
+      [{type:'multiple',question:'Was ist der y-Achsenabschnitt der Funktion f(x) = 2x + 3?',illustration:'📈',answers:['2','3','5','0'],correct:1,explanation:'Bei f(x) = mx + b ist b der y-Achsenabschnitt. Hier: b = 3. ✅'},
+       {type:'multiple',question:'Welche Steigung hat f(x) = –3x + 1?',illustration:'📈',answers:['1','–1','3','–3'],correct:3,explanation:'Bei f(x) = mx + b ist m die Steigung. Hier: m = –3. ✅'},
+       {type:'truefalse',question:'Eine lineare Funktion mit m > 0 ist streng monoton steigend.',illustration:'📈',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Positive Steigung bedeutet steigender Graph. ✅'},
+       {type:'multiple',question:'Wo schneidet f(x) = 4x – 8 die x-Achse?',illustration:'📊',answers:['x = 2','x = 4','x = –2','x = 8'],correct:0,explanation:'Nullstelle: 4x – 8 = 0 → x = 2. ✅'},
+       {type:'multiple',question:'Wie lautet die Gleichung einer Geraden durch (0|2) mit Steigung 3?',illustration:'📈',answers:['f(x) = 2x + 3','f(x) = 3x – 2','f(x) = 3x + 2','f(x) = 2x – 3'],correct:2,explanation:'m = 3, b = 2 → f(x) = 3x + 2. ✅'}],
+      [{type:'multiple',question:'Löse: x² – 9 = 0',illustration:'➕',answers:['x = 3','x = ±3','x = 9','x = ±9'],correct:1,explanation:'x² = 9 → x = ±3. Zwei Lösungen! ✅'},
+       {type:'multiple',question:'Was ist die Diskriminante bei ax²+bx+c=0?',illustration:'📐',answers:['a²–4bc','b²–4ac','b²+4ac','a²+4bc'],correct:1,explanation:'Diskriminante D = b² – 4ac bestimmt die Lösungsanzahl. ✅'},
+       {type:'truefalse',question:'Ist D < 0, hat die quadratische Gleichung keine reellen Lösungen.',illustration:'📐',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Negative Diskriminante → keine reellen Lösungen. ✅'},
+       {type:'multiple',question:'Löse: x² + 4x + 4 = 0',illustration:'📐',answers:['x = 2','x = –2','x = ±2','x = 4'],correct:1,explanation:'(x+2)² = 0 → x = –2. Doppelte Nullstelle! ✅'},
+       {type:'multiple',question:'Welche Form hat die Parabel von f(x) = –x²?',illustration:'📊',answers:['Nach oben geöffnet','Gerade Linie','Nach unten geöffnet','Kreis'],correct:2,explanation:'Negativer Koeffizient vor x² → Parabel öffnet nach unten. ✅'}],
+    ],
+    physik: [
+      [{type:'multiple',question:'Was besagt Newtons erstes Gesetz (Trägheitsgesetz)?',illustration:'⚡',answers:['F = m·a','Körper bleiben in Ruhe/gleichförmiger Bewegung ohne Krafteinwirkung','Zu jeder Kraft gibt es eine gleich große Gegenkraft','Energie bleibt erhalten'],correct:1,explanation:'Das Trägheitsgesetz: Ohne äußere Kraft ändert sich der Bewegungszustand nicht. ✅'},
+       {type:'multiple',question:'Was besagt F = m · a?',illustration:'⚡',answers:['Energieerhaltung','Gravitationsgesetz','Zweites Newtonsches Gesetz','Optisches Brechungsgesetz'],correct:2,explanation:'F = m · a ist Newtons 2. Gesetz: Kraft = Masse × Beschleunigung. ✅'},
+       {type:'truefalse',question:'Newtons drittes Gesetz: Actio = Reactio – jede Kraft hat eine gleich große Gegenkraft.',illustration:'⚡',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Actio und Reactio sind gleich groß, aber entgegengesetzt gerichtet. ✅'},
+       {type:'multiple',question:'Was ist die Einheit der Kraft?',illustration:'⚡',answers:['Watt','Joule','Newton','Pascal'],correct:2,explanation:'Die Einheit der Kraft ist Newton (N). ✅'},
+       {type:'multiple',question:'Ein Auto (1000 kg) beschleunigt mit 3 m/s². Welche Kraft wirkt?',illustration:'🚗',answers:['300 N','3000 N','1000 N','333 N'],correct:1,explanation:'F = m·a = 1000 kg · 3 m/s² = 3000 N ✅'}],
+    ],
+    chemie: [
+      [{type:'multiple',question:'Aus welchen Teilchen besteht ein Atom?',illustration:'⚛️',answers:['Nur Protonen','Protonen, Neutronen, Elektronen','Nur Elektronen','Moleküle und Atome'],correct:1,explanation:'Ein Atom besteht aus Protonen und Neutronen im Kern und Elektronen in der Hülle. ⚛️'},
+       {type:'multiple',question:'Was trägt ein Proton für eine Ladung?',illustration:'⚛️',answers:['Negativ','Neutral','Positiv','Variabel'],correct:2,explanation:'Protonen tragen eine positive Ladung (+). ✅'},
+       {type:'truefalse',question:'Elektronen befinden sich in der Atomhülle.',illustration:'⚛️',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Elektronen umkreisen den Kern in Schalen/Orbitalen. ✅'},
+       {type:'multiple',question:'Was trägt ein Neutron für eine Ladung?',illustration:'⚛️',answers:['Positiv','Negativ','Neutral','Doppelt positiv'],correct:2,explanation:'Neutronen sind elektrisch neutral – daher ihr Name! ✅'},
+       {type:'multiple',question:'Was bestimmt die Ordnungszahl eines Elements?',illustration:'⚛️',answers:['Anzahl der Neutronen','Anzahl der Elektronen in der Hülle','Anzahl der Protonen im Kern','Atommasse'],correct:2,explanation:'Die Ordnungszahl = Protonenzahl. Sie definiert das Element. ✅'}],
+    ],
+    englisch: [
+      [{type:'multiple',question:'Choose the correct complex sentence:',illustration:'📝',answers:['Although it was raining, we went outside.','Although it was raining but we went outside.','Although it was raining, however we went outside.','Despite it was raining, we went outside.'],correct:0,explanation:'"Although + clause, main clause" ist die korrekte Struktur. ✅'},
+       {type:'multiple',question:'What does "nevertheless" mean?',illustration:'📝',answers:['Therefore','However/Nonetheless','Additionally','For example'],correct:1,explanation:'"Nevertheless" bedeutet „trotzdem" oder „dennoch". ✅'},
+       {type:'truefalse',question:'"Despite" is followed by a noun or gerund, not a full clause.',illustration:'📝',answers:['Richtig','Falsch'],correct:0,explanation:'Richtig! Despite + Nomen/Gerund: "Despite the rain..." (nicht "Despite it rained"). ✅'},
+       {type:'multiple',question:'Which sentence uses the subjunctive correctly?',illustration:'📝',answers:['If I was you, I would apologize.','If I were you, I would apologize.','If I am you, I would apologize.','If I be you, I would apologize.'],correct:1,explanation:'"If I were you" – im Konjunktiv II steht „were" für alle Personen. ✅'},
+       {type:'multiple',question:'What is the correct passive form of "They build houses"?',illustration:'🏠',answers:['Houses are built by them.','Houses is built by them.','Houses were built by them.','Houses be built by them.'],correct:0,explanation:'Passiv Präsens: Subject + am/is/are + past participle. ✅'}],
+    ],
+  },
+};
+
+// Gibt echte Fallback-Fragen zurück – nach Altersgruppe, Fach und Lektion
+function fbQs(title) {
+  const age = S.prof ? S.prof.age : 'junior';
+  const subId = S.sub ? S.sub.id : '';
+  const idx = S.lesson ? S.lesson.index : 0;
+  try {
+    const qs = FALLBACK_DB[age][subId][idx];
+    if (qs && qs.length > 0) return qs;
+  } catch(e) {}
+  // Generischer Fallback falls noch kein Inhalt für diese Kombination
+  return [
+    {type:'multiple',question:`Was weißt du über das Thema „${title}"?`,illustration:'🤔',answers:['Sehr viel!','Einiges','Wenig','Nichts'],correct:0,explanation:'Super – Neugier ist der erste Schritt beim Lernen! 📚'},
+    {type:'truefalse',question:'Regelmäßiges Üben hilft beim Lernen.',illustration:'📚',answers:['Richtig','Falsch'],correct:0,explanation:'Ja! Wer regelmäßig übt, merkt sich Dinge viel besser. ✅'},
+  ];
+}
 
 function renderQ(){
   const q=S.qs[S.qi],t=S.qs.length;
@@ -851,15 +1340,28 @@ function initChat(){
 
 async function sendChat(){
   const inp=document.getElementById('chat-in');const text=inp.value.trim();if(!text)return;
+  const apiKey=getApiKey();
+  if(!apiKey){
+    toast('Bitte zuerst API-Key in ⚙️ Einstellungen eintragen!');return;
+  }
   inp.value='';appendMsg('u',text);S.chat.push({role:'user',content:text});
   const tid=appendMsg('a','…');
   const cfg=ACF[S.prof.age];
   const sys=`Du bist freundlicher Lernassistent für ${S.prof.name}, Altersgruppe "${cfg.label}" (${cfg.range}). Antworte IMMER auf Deutsch, kurz und altersgerecht. Mini: sehr einfach+Emojis. Junior: spielerisch. Mittel: schulrelevant. Profi: sachlich+tiefgründig. Max. 3-4 Sätze.`;
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,system:sys,messages:S.chat})});
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,system:sys,messages:S.chat})
+    });
     const d=await r.json();const reply=d.content.map(b=>b.text||'').join('');
     S.chat.push({role:'assistant',content:reply});updMsg(tid,reply);
-  }catch{updMsg(tid,'Ups, Fehler. Nochmal versuchen! 😅')}
+  }catch{updMsg(tid,'Ups, Fehler. API-Key prüfen! 😅')}
 }
 window.sendChat=sendChat;
 
@@ -875,6 +1377,7 @@ function updMsg(id,text){const el=document.getElementById(id);if(el)el.querySele
 
 // ── init ───────────────────────────────────────────────────
 renderSplash();
+updateKeyStatus();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
