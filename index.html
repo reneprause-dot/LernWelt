@@ -73,11 +73,12 @@
 
     /* ══════════ SPLASH ══════════ */
     #sc-splash{background:linear-gradient(135deg,#FF6B35,#FF8FAB 50%,#A78BFA);
-      align-items:center;justify-content:center;padding:20px 20px 40px;
-      overflow-y:auto;-webkit-overflow-scrolling:touch}
-    .splash-logo{font-family:'Baloo 2',cursive;font-size:clamp(44px,11vw,74px);
+      align-items:center;justify-content:flex-start;
+      padding:40px 20px 50px;
+      overflow-y:auto;-webkit-overflow-scrolling:touch;gap:0}
+    .splash-logo{font-family:'Baloo 2',cursive;font-size:clamp(36px,9vw,60px);
       font-weight:800;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.2);
-      text-align:center;margin-bottom:6px}
+      text-align:center;margin-bottom:4px}
     .splash-logo span{color:var(--acc)}
     .splash-sub{color:rgba(255,255,255,.9);font-size:15px;font-weight:600;
       text-align:center;margin-bottom:32px}
@@ -168,12 +169,13 @@
     .age-tag{padding:5px 10px;border-radius:50px;font-size:11px;font-weight:800;color:#fff;white-space:nowrap}
     .bnav{position:fixed;bottom:0;left:0;right:0;background:#fff;
       box-shadow:0 -4px 20px rgba(0,0,0,.08);display:flex;justify-content:space-around;
-      padding:9px 0 max(env(safe-area-inset-bottom),9px);z-index:100}
-    .nb{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
-      padding:6px 15px;border-radius:13px;font-size:11px;font-weight:700;color:var(--muted);
-      transition:background .2s,color .2s}
+      padding:8px 0 max(env(safe-area-inset-bottom),8px);z-index:100}
+    .nb{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;
+      padding:5px 6px;border-radius:11px;font-size:10px;font-weight:700;color:var(--muted);
+      transition:background .2s,color .2s;flex:1;min-width:0;max-width:90px;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation}
     .nb.on{color:var(--pri);background:rgba(255,107,53,.08)}
-    .nb .ni{font-size:23px}
+    .nb .ni{font-size:22px}
 
     /* ══════════ HOME ══════════ */
     #sc-home{background:var(--bg)}
