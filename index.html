@@ -387,6 +387,7 @@
   <div class="divider" id="divider" style="display:none"><span>oder neu starten</span></div>
   <button class="sp-btn pri" onclick="showScreen('sc-create');setupCreate()">✨ Neues Profil anlegen</button>
   <button class="sp-btn sec" onclick="showScreen('sc-join')">🔑 Mit Code einloggen</button>
+  <button onclick="openSettings()" style="background:rgba(255,255,255,0.18);border:2px solid rgba(255,255,255,0.45);border-radius:15px;color:#fff;font-family:'Baloo 2',cursive;font-size:16px;font-weight:800;padding:13px 20px;cursor:pointer;width:100%;max-width:480px;margin-top:4px;-webkit-tap-highlight-color:transparent;touch-action:manipulation">⚙️ API-Key / Einstellungen</button>
 </div>
 
 <!-- ══ CREATE ══ -->
@@ -408,14 +409,12 @@
 <div class="screen" id="sc-join">
   <div class="join-hdr"><h2>Mit Code einloggen 🔑</h2><p>Gib deinen persönlichen Lern-Code ein</p></div>
   <div style="width:100%;max-width:460px;padding:0 4px">
-    <div class="lbl" style="text-align:center;letter-spacing:2px">DEIN CODE (z.B. LÖWE-4821)</div>
-    <div class="code-row">
-      <input class="code-seg" id="cw" placeholder="LÖWE" maxlength="6"
-        oninput="this.value=this.value.toUpperCase();if(this.value.length>=4)document.getElementById('cn').focus()">
-      <div class="code-dash">–</div>
-      <input class="code-seg" id="cn" placeholder="4821" maxlength="4" inputmode="numeric">
-    </div>
-    <div class="code-hint">Den Code findest du in deinem Profil → <strong>Mein Code</strong></div>
+    <div class="lbl" style="text-align:center;letter-spacing:2px">DEIN CODE (z.B. FUCHS-8429)</div>
+    <input class="code-seg" id="code-full" placeholder="FUCHS-8429" maxlength="11"
+      style="width:100%;text-align:center;font-size:24px;letter-spacing:4px;margin-bottom:16px"
+      oninput="this.value=this.value.toUpperCase()" autocomplete="off" autocorrect="off"
+      autocapitalize="characters" spellcheck="false">
+    <div class="code-hint">Den Code findest du im Profil unter <strong>🔑 Mein Code</strong></div>
     <button class="f-btn pri" onclick="joinCode()" style="margin-bottom:11px">Einloggen ✓</button>
     <button class="f-btn ghost" onclick="showScreen('sc-splash')">Zurück</button>
   </div>
@@ -811,15 +810,18 @@ async function createProfile(){
 window.createProfile=createProfile;
 
 async function joinCode(){
-  const w=document.getElementById('cw').value.trim().toUpperCase();
-  const n=document.getElementById('cn').value.trim();
-  if(!w||!n){toast('Bitte vollständigen Code eingeben! 🔑');return}
-  const code=`${w}-${n}`;
+  const raw = (document.getElementById('code-full').value||'').trim().toUpperCase();
+  if(!raw||!raw.includes('-')){toast('Bitte vollständigen Code eingeben! (z.B. FUCHS-8429) 🔑');return}
+  const parts = raw.split('-');
+  if(parts.length!==2||!parts[0]||!parts[1]){toast('Format: WORT-ZAHL (z.B. FUCHS-8429) 🔑');return}
+  const code = raw;
   loading(true,'Profil wird geladen…');await fbWait();
   try{
     const prof=await fbCode(code);
     if(!prof){loading(false);toast('Code nicht gefunden. Nochmal prüfen! 🔍');return}
-    S.prof=prof;lsSave(prof);loading(false);toast(`Willkommen zurück, ${prof.name}! 👋`);renderHome();showScreen('sc-home');
+    S.prof=prof;lsSave(prof);loading(false);
+    toast(`Willkommen zurück, ${prof.name}! 👋`);
+    renderHome();showScreen('sc-home');
   }catch(e){loading(false);toast('Verbindungsfehler – Firebase konfiguriert? ⚠️');console.error(e)}
 }
 window.joinCode=joinCode;
