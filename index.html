@@ -355,8 +355,8 @@
       cursor:pointer;color:var(--muted);margin-bottom:8px;display:block}
     .modal-close:hover{border-color:var(--muted)}
     #sc-explore{background:var(--bg)}
-    #chat-msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:9px;padding:14px 15px 7px}
-    .chat-bar{display:flex;gap:9px;padding:11px 15px;background:#fff;box-shadow:0 -2px 12px rgba(0,0,0,.06)}
+    #chat-msgs{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:9px;padding:14px 15px 7px}
+    .chat-bar{display:flex;gap:9px;padding:11px 15px;background:#fff;box-shadow:0 -2px 12px rgba(0,0,0,.06);flex-shrink:0}
     .chat-in{flex:1;padding:11px 15px;border-radius:13px;border:2px solid #eee;
       font-family:'Nunito',sans-serif;font-size:14px;font-weight:600;outline:none;
       transition:border-color .2s}
@@ -431,7 +431,6 @@
     <div class="tb-right">
       <div class="xp-pill">⭐ <span id="xp-disp">0</span></div>
       <div class="age-tag" id="age-tag">Mini</div>
-      <button onclick="openSettings()" style="background:none;border:none;font-size:24px;cursor:pointer;padding:6px;border-radius:10px;line-height:1;-webkit-tap-highlight-color:transparent;touch-action:manipulation" aria-label="Einstellungen">⚙️</button>
     </div>
   </div>
   <div class="hc">
@@ -455,6 +454,7 @@
     <div class="nb on" onclick="navTo('home')"><div class="ni">🏠</div>Start</div>
     <div class="nb" onclick="navTo('explore')"><div class="ni">🤖</div>KI-Tutor</div>
     <div class="nb" onclick="navTo('profile')"><div class="ni">🏆</div>Profil</div>
+    <div class="nb" onclick="openSettings()"><div class="ni">⚙️</div>Einstellungen</div>
   </nav>
 </div>
 
@@ -524,11 +524,13 @@
     <div class="sec-t" style="margin-top:0">🏅 Auszeichnungen</div>
     <div class="ach-g" id="ach-g"></div>
     <button class="sw-btn" onclick="switchProf()">↩ Profil wechseln</button>
+    <button class="sw-btn" onclick="openSettings()" style="margin-top:10px;border-color:var(--pri);color:var(--pri)">⚙️ API-Key & Einstellungen</button>
   </div>
   <nav class="bnav">
     <div class="nb" onclick="navTo('home')"><div class="ni">🏠</div>Start</div>
     <div class="nb" onclick="navTo('explore')"><div class="ni">🤖</div>KI-Tutor</div>
     <div class="nb on" onclick="navTo('profile')"><div class="ni">🏆</div>Profil</div>
+    <div class="nb" onclick="openSettings()"><div class="ni">⚙️</div>Einstellungen</div>
   </nav>
 </div>
 
@@ -543,6 +545,12 @@
     <input class="chat-in" id="chat-in" placeholder="Stelle eine Frage…" onkeydown="if(event.key==='Enter')sendChat()">
     <button class="chat-snd" onclick="sendChat()">➤</button>
   </div>
+  <nav class="bnav">
+    <div class="nb" onclick="navTo('home')"><div class="ni">🏠</div>Start</div>
+    <div class="nb on" onclick="navTo('explore')"><div class="ni">🤖</div>KI-Tutor</div>
+    <div class="nb" onclick="navTo('profile')"><div class="ni">🏆</div>Profil</div>
+    <div class="nb" onclick="openSettings()"><div class="ni">⚙️</div>Einstellungen</div>
+  </nav>
 </div>
 
 <!-- ══ SETTINGS MODAL ══ -->
@@ -674,9 +682,12 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 function confetti(){const cols=['#FF6B35','#4ECDC4','#FFE66D','#A78BFA','#6BCB77','#FF8FAB'];for(let i=0;i<55;i++){const c=document.createElement('div');c.className='cf';c.style.left=Math.random()*100+'vw';c.style.background=cols[Math.floor(Math.random()*cols.length)];c.style.animationDuration=(Math.random()*2+1.5)+'s';c.style.animationDelay=(Math.random()*.5)+'s';c.style.borderRadius=Math.random()>.5?'50%':'2px';document.body.appendChild(c);setTimeout(()=>c.remove(),4000)}}
 function navTo(tab){
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
-  if(tab==='home'){renderHome();showScreen('sc-home');document.querySelectorAll('.nb')[0].classList.add('on')}
-  else if(tab==='explore'){initChat();showScreen('sc-explore');document.querySelectorAll('.nb')[1].classList.add('on')}
-  else if(tab==='profile'){renderPV();showScreen('sc-pv');document.querySelectorAll('.nb')[2].classList.add('on')}
+  if(tab==='home'){renderHome();showScreen('sc-home');
+    document.querySelectorAll('.nb').forEach(b=>{if(b.textContent.includes('Start'))b.classList.add('on')})}
+  else if(tab==='explore'){initChat();showScreen('sc-explore');
+    document.querySelectorAll('.nb').forEach(b=>{if(b.textContent.includes('KI-Tutor'))b.classList.add('on')})}
+  else if(tab==='profile'){renderPV();showScreen('sc-pv');
+    document.querySelectorAll('.nb').forEach(b=>{if(b.textContent.includes('Profil'))b.classList.add('on')})}
 }
 window.showScreen=showScreen;window.navTo=navTo;
 
