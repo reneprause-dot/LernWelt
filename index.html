@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#FF6B35">
   <title>LernWelt – Spielend lernen!</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <!-- v2.5 -->
   <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -80,29 +84,30 @@
       font-weight:800;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.2);
       text-align:center;margin-bottom:4px}
     .splash-logo span{color:var(--acc)}
-    .splash-sub{color:rgba(255,255,255,.9);font-size:15px;font-weight:600;
-      text-align:center;margin-bottom:32px}
-    .prof-list{width:100%;max-width:480px;display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
-    .prof-card{background:#fff;border-radius:18px;padding:14px 18px;
-      display:flex;align-items:center;gap:14px;cursor:pointer;
-      box-shadow:0 8px 30px rgba(0,0,0,.13);
-      transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s}
-    .prof-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.18)}
-    .prof-av{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;
-      justify-content:center;font-size:26px;flex-shrink:0}
+    .splash-sub{color:rgba(255,255,255,.9);font-size:14px;font-weight:600;
+      text-align:center;margin-bottom:20px}
+    .prof-list{width:100%;max-width:480px;display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+    .prof-card{background:#fff;border-radius:16px;padding:12px 16px;
+      display:flex;align-items:center;gap:12px;cursor:pointer;
+      box-shadow:0 6px 24px rgba(0,0,0,.13);
+      transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+    .prof-card:hover{transform:translateY(-3px)}
+    .prof-av{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;
+      justify-content:center;font-size:24px;flex-shrink:0}
     .prof-info{flex:1}
-    .prof-name{font-family:'Baloo 2',cursive;font-size:19px;font-weight:800}
-    .prof-meta{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px}
-    .prof-code{font-size:11px;font-weight:800;letter-spacing:1px;
-      background:var(--bg);padding:4px 10px;border-radius:50px;color:var(--muted);flex-shrink:0}
-    .divider{display:flex;align-items:center;gap:10px;width:100%;max-width:480px;margin:8px 0}
+    .prof-name{font-family:'Baloo 2',cursive;font-size:17px;font-weight:800}
+    .prof-meta{font-size:11px;color:var(--muted);font-weight:600;margin-top:1px}
+    .prof-code{font-size:10px;font-weight:800;letter-spacing:1px;
+      background:var(--bg);padding:3px 8px;border-radius:50px;color:var(--muted);flex-shrink:0}
+    .divider{display:flex;align-items:center;gap:10px;width:100%;max-width:480px;margin:6px 0}
     .divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.35)}
-    .divider span{color:rgba(255,255,255,.8);font-size:12px;font-weight:700;white-space:nowrap}
-    .sp-btn{width:100%;max-width:480px;padding:15px;border-radius:15px;border:none;
-      font-family:'Baloo 2',cursive;font-size:18px;font-weight:800;cursor:pointer;
-      transition:transform .15s,box-shadow .15s;margin-bottom:10px}
+    .divider span{color:rgba(255,255,255,.8);font-size:11px;font-weight:700;white-space:nowrap}
+    .sp-btn{width:100%;max-width:480px;padding:13px;border-radius:14px;border:none;
+      font-family:'Baloo 2',cursive;font-size:17px;font-weight:800;cursor:pointer;
+      transition:transform .15s;margin-bottom:8px;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation}
     .sp-btn:hover{transform:translateY(-2px)}
-    .sp-btn.pri{background:#fff;color:var(--pri);box-shadow:0 6px 24px rgba(0,0,0,.15)}
+    .sp-btn.pri{background:#fff;color:var(--pri);box-shadow:0 5px 20px rgba(0,0,0,.13)}
     .sp-btn.sec{background:rgba(255,255,255,.18);color:#fff;border:2px solid rgba(255,255,255,.45)}
 
     /* ══════════ CREATE PROFILE ══════════ */
