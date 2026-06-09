@@ -388,7 +388,8 @@
       box-shadow:var(--sh-sm);cursor:pointer;border:3px solid transparent;
       transition:all .18s;-webkit-tap-highlight-color:transparent}
     .shop-item.owned{border-color:var(--grn)}
-    .shop-item.locked{opacity:.5}
+    .shop-item.locked{opacity:.5;cursor:default}
+    .shop-item.active-av{border-color:var(--pri);box-shadow:0 0 0 3px rgba(255,107,53,.2)}
     .shop-item .si-emoji{font-size:30px;display:block;margin-bottom:4px}
     .shop-item .si-cost{font-size:10px;font-weight:800;color:var(--muted)}
     .shop-item.owned .si-cost{color:var(--grn)}
@@ -604,7 +605,9 @@
     </div>
     <div class="sec-t" style="margin-top:4px">🏅 Auszeichnungen</div>
     <div class="ach-g" id="ach-g"></div>
-    <div class="sec-t">🎨 Avatar-Shop</div>
+    <div class="sec-t" style="margin-top:4px">🎨 Avatar-Shop
+      <span style="font-size:11px;font-weight:600;color:var(--muted);margin-left:6px">Tippen zum Ausrüsten</span>
+    </div>
     <div class="shop-grid" id="avatar-shop"></div>
     <button class="sw-btn" onclick="showScreen('sc-edit');setupEdit()" style="border-color:var(--sec);color:var(--sec)">✏️ Profil bearbeiten</button>
     <button class="sw-btn" onclick="navTo('parent')">👨‍👩‍👧 Eltern-Bereich</button>
@@ -1588,29 +1591,53 @@ function renderPV(){
   const shop=document.getElementById("avatar-shop");shop.innerHTML="";
   SHOP_AVATARS.forEach(item=>{
     const owned=(p.ownedAvatars||[]).includes(item.e)||item.cost===0;
+    const isActive=p.avatar===item.e;
+    const canBuy=!owned&&item.cost<=p.xp;
     const el=document.createElement("div");
-    el.className="shop-item"+(owned?" owned":item.cost>p.xp?" locked":"");
-    el.innerHTML=`<span class="si-emoji">${item.e}</span><div class="si-cost">${owned?"✅ Besitzt":`${item.cost} XP`}</div>`;
-    if(!owned&&item.cost<=p.xp)el.onclick=()=>buyAvatar(item);
-    else if(owned)el.onclick=()=>equipAvatar(item.e);
+    el.className="shop-item"+(isActive?" active-av":owned?" owned":item.cost>p.xp?" locked":"");
+    el.style.cssText=isActive
+      ?"border-color:var(--pri);background:rgba(255,107,53,.08);transform:scale(1.05)":"";
+    const label=isActive
+      ?`<div class="si-cost" style="color:var(--pri);font-size:11px">✓ Aktiv</div>`
+      :owned
+        ?`<div class="si-cost" style="color:var(--sec)">Ausrüsten</div>`
+        :canBuy
+          ?`<div class="si-cost">${item.cost} XP</div>`
+          :`<div class="si-cost">🔒 ${item.cost} XP</div>`;
+    el.innerHTML=`<span class="si-emoji">${item.e}</span>${label}`;
+    if(isActive){
+      el.title="Aktiver Avatar";
+    } else if(owned){
+      el.onclick=()=>equipAvatar(item.e);
+      el.title="Tippen zum Ausrüsten";
+    } else if(canBuy){
+      el.onclick=()=>buyAvatar(item);
+      el.title=`Für ${item.cost} XP kaufen`;
+    }
     shop.appendChild(el);
   });
 }
 function buyAvatar(item){
   const p=S.prof;
   if(p.xp<item.cost){toast("Nicht genug XP! 💎");return}
-  if(!confirm(`${item.e} für ${item.cost} XP kaufen?`))return;
+  if(!confirm(`${item.e} für ${item.cost} XP kaufen und ausrüsten?`))return;
   p.xp-=item.cost;
   if(!p.ownedAvatars)p.ownedAvatars=[];
   p.ownedAvatars.push(item.e);
   p.avatar=item.e;
+  document.getElementById("xp-disp").textContent=p.xp;
   fbUpdate(p).catch(()=>{});lsSave(p);
-  toast(`${item.e} freigeschaltet! ✅`);renderPV();
+  toast(`${item.e} freigeschaltet und ausgerüstet! ✅`);renderPV();
 }
 function equipAvatar(e){
-  S.prof.avatar=e;
-  fbUpdate(S.prof).catch(()=>{});lsSave(S.prof);
-  toast(`${e} ausgerüstet! ✅`);renderPV();
+  const p=S.prof;
+  p.avatar=e;
+  // Update all avatar displays immediately
+  document.getElementById("pv-av").textContent=e;
+  document.getElementById("tb-av").textContent=e;
+  fbUpdate(p).catch(()=>{});lsSave(p);
+  toast(`${e} ist jetzt dein Avatar! ✅`);
+  renderPV(); // re-render to update active state in shop
 }
 window.buyAvatar=buyAvatar;window.equipAvatar=equipAvatar;
 
