@@ -885,13 +885,13 @@ const LN={
   mini:{
     farben:["Rot, Blau & Gelb","Grün & Orange","Mischen von Farben","Farben im Alltag"],
     tiere:["Haustiere","Bauernhoftiere","Wildtiere","Wassertiere","Vögel"],
-    zahlen:["Zahlen 1–3","Zahlen 4–6","Zahlen 7–10","Zählen üben"],
+    zahlen:["Zahlen 1-5","Zahlen 6-10","Zählen üben","Erstes Rechnen"],
     buchstaben:["A, B, C","D, E, F","G, H, I","Mein Name"],
     formen:["Kreis & Quadrat","Dreieck & Rechteck","Formen in der Natur"],
-    koerper:["Kopf & Gesicht","Arme & Beine","Innere Organe"],
+    koerper:["Mein Gesicht","Arme & Beine","Innen im Körper"],
   },
   junior:{
-    mathe:["Plus bis 20","Minus bis 20","Plus bis 100","Minus bis 100","Malreihen 2 & 5","Malreihen 3 & 4"],
+    mathe:["Plus bis 20","Minus bis 20","Plus bis 100","Minus bis 100","Einmaleins 2er & 5er","Einmaleins 3er & 4er"],
     lesen:["Silben lesen","Kurze Wörter","Sätze lesen","Kleine Geschichte","Laut & leise"],
     schreiben:["Druckbuchstaben","Großschreibung","Satzzeichen","Mein erster Brief","Diktat"],
     sachkunde:["Die vier Jahreszeiten","Tiere im Winter","Unser Wetter","Die Feuerwehr"],
@@ -1444,10 +1444,1058 @@ const FBQ={
     ]
   }
 };
+// ── MINI ZAHLEN GENERATOR (3-5 Jahre) ──────────────────────
+// Erzeugt bei jedem Aufruf neue, zufällige Zähl-/Rechenfragen.
+// Schwierigkeit steigt leicht mit der Lektions-Nummer (0-3).
+
+const MINI_COUNT_EMOJIS = ["🍎","🍌","🍓","🍇","🐥","⭐","🐻","🚗","🎈","🐠","🦋","🌸","🍪","🐝","🧸","🚀","🐬","🌻","🍒","🦔"];
+const MINI_ANIMAL_FACTS = [
+  {emoji:"🐕",name:"ein Hund",beine:4,ohren:2,augen:2},
+  {emoji:"🐱",name:"eine Katze",beine:4,ohren:2,augen:2},
+  {emoji:"🐰",name:"ein Hase",beine:4,ohren:2,augen:2},
+  {emoji:"🐦",name:"ein Vogel",beine:2,ohren:0,augen:2},
+  {emoji:"🐔",name:"ein Huhn",beine:2,ohren:0,augen:2},
+  {emoji:"🐴",name:"ein Pferd",beine:4,ohren:2,augen:2},
+  {emoji:"🐖",name:"ein Schwein",beine:4,ohren:2,augen:2},
+  {emoji:"🐢",name:"eine Schildkröte",beine:4,ohren:0,augen:2},
+  {emoji:"🐘",name:"ein Elefant",beine:4,ohren:2,augen:2},
+  {emoji:"🦆",name:"eine Ente",beine:2,ohren:0,augen:2},
+  {emoji:"🐸",name:"ein Frosch",beine:4,ohren:0,augen:2},
+  {emoji:"🐝",name:"eine Biene",beine:6,ohren:0,augen:2},
+  {emoji:"🐜",name:"eine Ameise",beine:6,ohren:0,augen:2},
+  {emoji:"🕷️",name:"eine Spinne",beine:8,ohren:0,augen:2}
+];
+const MINI_OBJECT_FACTS = [
+  {emoji:"🚲",name:"ein Fahrrad",raeder:2},
+  {emoji:"🚗",name:"ein Auto",raeder:4},
+  {emoji:"🛵",name:"ein Roller",raeder:2},
+  {emoji:"🚚",name:"ein Lastwagen",raeder:6},
+  {emoji:"🛴",name:"ein Kickroller",raeder:2},
+  {emoji:"🚜",name:"ein Traktor",raeder:4}
+];
+const MINI_SHAPE_SIDES = [
+  {emoji:"🔺",name:"ein Dreieck",seiten:3},
+  {emoji:"🟥",name:"ein Quadrat",seiten:4},
+  {emoji:"⭐",name:"ein Stern",seiten:5},
+  {emoji:"🔷",name:"eine Raute",seiten:4},
+  {emoji:"⬡",name:"ein Sechseck",seiten:6}
+];
+
+function miniRandInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function miniPick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function miniShuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+// Baut Multiple-Choice-Antworten: korrekte Zahl + 3 unterschiedliche Distraktoren in zufälliger Reihenfolge
+function miniBuildNumAnswers(correct, spread){
+  const opts = new Set([correct]);
+  let curSpread = Math.max(spread, 3);
+  let guard = 0;
+  while(opts.size < 4 && guard < 200){
+    guard++;
+    const d = correct + miniRandInt(-curSpread, curSpread);
+    if(d >= 0 && d <= 30 && d !== correct) opts.add(d);
+    if(guard % 20 === 0) curSpread += 2; // Suchradius erweitern falls nötig
+  }
+  // Absicherung: falls immer noch zu wenige Optionen (extrem kleiner Zahlenraum), mit Folgewerten auffüllen
+  let filler = correct + 1;
+  while(opts.size < 4){
+    if(filler >= 0 && filler <= 30 && !opts.has(filler)) opts.add(filler);
+    filler++;
+  }
+  const arr = miniShuffle([...opts]);
+  return { answers: arr.map(String), correct: arr.indexOf(correct) };
+}
+
+function genMiniZahlenQuestion(level){
+  // level 0-3 steuert grob den Zahlenraum
+  const maxN = [5, 8, 10, 15][Math.min(level,3)];
+  const r = Math.random();
+
+  if(r < 0.20){
+    // Zähl-Emoji-Frage
+    const emoji = miniPick(MINI_COUNT_EMOJIS);
+    const n = miniRandInt(1, maxN);
+    const {answers, correct} = miniBuildNumAnswers(n, 2);
+    return {type:"multiple", question:`Zähle: ${emoji.repeat(n)} – wie viele sind das?`, illustration:emoji,
+      answers, correct, explanation:`Es sind ${n}! ${emoji.repeat(Math.min(n,5))}`};
+  }
+  if(r < 0.35){
+    // Nachfolger/Vorgänger
+    const n = miniRandInt(1, maxN-1);
+    const after = Math.random() < 0.5;
+    const target = after ? n+1 : n-1;
+    if(target < 0) return genMiniZahlenQuestion(level);
+    const {answers, correct} = miniBuildNumAnswers(target, 2);
+    return {type:"multiple", question: after ? `Was kommt nach der ${n}?` : `Was kommt vor der ${n}?`,
+      illustration:"🔢", answers, correct, explanation:`Die ${target}!`};
+  }
+  if(r < 0.55){
+    // Plus-Rechnung
+    const a = miniRandInt(1, Math.max(2,Math.floor(maxN/2)));
+    const b = miniRandInt(1, Math.max(2,Math.floor(maxN/2)));
+    const sum = a+b;
+    const {answers, correct} = miniBuildNumAnswers(sum, 2);
+    return {type:"multiple", question:`Was ergibt ${a} + ${b}?`, illustration:"➕",
+      answers, correct, explanation:`${a}+${b}=${sum}!`};
+  }
+  if(r < 0.70 && maxN >= 8){
+    // Minus-Rechnung (nur ab Lektion mit größerem Zahlenraum)
+    const a = miniRandInt(3, maxN);
+    const b = miniRandInt(1, a-1);
+    const diff = a-b;
+    const {answers, correct} = miniBuildNumAnswers(diff, 2);
+    return {type:"multiple", question:`Was ergibt ${a} – ${b}?`, illustration:"➖",
+      answers, correct, explanation:`${a}-${b}=${diff}!`};
+  }
+  if(r < 0.85){
+    // Vergleich größer/kleiner
+    let a = miniRandInt(1, maxN), b = miniRandInt(1, maxN);
+    while(a === b) b = miniRandInt(1, maxN);
+    const bigger = Math.random() < 0.5;
+    const correctVal = bigger ? Math.max(a,b) : Math.min(a,b);
+    const opts = miniShuffle([a,b]);
+    return {type:"multiple", question: bigger ? `Welche Zahl ist größer: ${a} oder ${b}?` : `Welche Zahl ist kleiner: ${a} oder ${b}?`,
+      illustration:"🔢", answers: opts.map(String), correct: opts.indexOf(correctVal),
+      explanation:`${correctVal} ist ${bigger?"größer":"kleiner"}!`};
+  }
+  if(r < 0.93){
+    // Tier-Beine-Frage
+    const a = miniPick(MINI_ANIMAL_FACTS);
+    const {answers, correct} = miniBuildNumAnswers(a.beine, 2);
+    return {type:"multiple", question:`Wie viele Beine hat ${a.name}?`, illustration:a.emoji,
+      answers, correct, explanation:`${a.name[0].toUpperCase()}${a.name.slice(1)} hat ${a.beine} Beine!`};
+  }
+  // Fahrzeug-Räder oder Form-Seiten
+  if(Math.random() < 0.5){
+    const o = miniPick(MINI_OBJECT_FACTS);
+    const {answers, correct} = miniBuildNumAnswers(o.raeder, 2);
+    return {type:"multiple", question:`Wie viele Räder hat ${o.name}?`, illustration:o.emoji,
+      answers, correct, explanation:`${o.name[0].toUpperCase()}${o.name.slice(1)} hat ${o.raeder} Räder!`};
+  }
+  const s = miniPick(MINI_SHAPE_SIDES);
+  const {answers, correct} = miniBuildNumAnswers(s.seiten, 2);
+  return {type:"multiple", question:`Wie viele Seiten hat ${s.name}?`, illustration:s.emoji,
+    answers, correct, explanation:`${s.name[0].toUpperCase()}${s.name.slice(1)} hat ${s.seiten} Seiten!`};
+}
+
+function genMiniZahlenTrueFalse(level){
+  const maxN = [5, 8, 10, 15][Math.min(level,3)];
+  const r = Math.random();
+  if(r < 0.5){
+    const a = miniRandInt(1, Math.max(2,Math.floor(maxN/2)));
+    const b = miniRandInt(1, Math.max(2,Math.floor(maxN/2)));
+    const realSum = a+b;
+    const showCorrect = Math.random() < 0.5;
+    const shown = showCorrect ? realSum : realSum + miniPick([-2,-1,1,2].filter(d=>realSum+d>=0));
+    return {type:"truefalse", question:`${a} + ${b} = ${shown}`, illustration:"➕",
+      answers:["Richtig","Falsch"], correct: showCorrect?0:1,
+      explanation: showCorrect ? `Ja! ${a}+${b}=${realSum}.` : `Nein! ${a}+${b}=${realSum}, nicht ${shown}.`};
+  }
+  let a = miniRandInt(1, maxN), b = miniRandInt(1, maxN);
+  while(a===b) b = miniRandInt(1, maxN);
+  const claim = Math.random() < 0.5 ? `${a} ist größer als ${b}` : `${a} ist kleiner als ${b}`;
+  const trueClaimIsGreater = claim.includes("größer");
+  const actuallyTrue = trueClaimIsGreater ? a > b : a < b;
+  return {type:"truefalse", question:`${claim}.`, illustration:"🔢",
+    answers:["Richtig","Falsch"], correct: actuallyTrue?0:1,
+    explanation: actuallyTrue ? "Ja, das stimmt!" : `Nein! ${trueClaimIsGreater? (b>a?b:a) : (a<b?a:b)} ist eigentlich ${trueClaimIsGreater?"kleiner":"größer"}.`};
+}
+
+function genMiniZahlenLesson(level, count){
+  const qs = [];
+  for(let i=0;i<count;i++){
+    qs.push(Math.random() < 0.25 ? genMiniZahlenTrueFalse(level) : genMiniZahlenQuestion(level));
+  }
+  return qs;
+}
+// ── MINI BUCHSTABEN GENERATOR (3-5 Jahre) ──────────────────
+const MINI_ABC = [
+  {b:"A", word:"Apfel", emoji:"🍎"}, {b:"B", word:"Ball", emoji:"⚽"},
+  {b:"C", word:"Clown", emoji:"🤡"}, {b:"D", word:"Drache", emoji:"🐉"},
+  {b:"E", word:"Elefant", emoji:"🐘"}, {b:"F", word:"Fisch", emoji:"🐟"},
+  {b:"G", word:"Giraffe", emoji:"🦒"}, {b:"H", word:"Hund", emoji:"🐕"},
+  {b:"I", word:"Igel", emoji:"🦔"}, {b:"J", word:"Jacke", emoji:"🧥"},
+  {b:"K", word:"Katze", emoji:"🐱"}, {b:"L", word:"Löwe", emoji:"🦁"},
+  {b:"M", word:"Maus", emoji:"🐭"}, {b:"N", word:"Nase", emoji:"👃"},
+  {b:"O", word:"Orange", emoji:"🍊"}, {b:"P", word:"Pinguin", emoji:"🐧"},
+  {b:"Q", word:"Qualle", emoji:"🪼"}, {b:"R", word:"Rakete", emoji:"🚀"},
+  {b:"S", word:"Sonne", emoji:"☀️"}, {b:"T", word:"Tiger", emoji:"🐯"},
+  {b:"U", word:"Uhr", emoji:"⏰"}, {b:"V", word:"Vogel", emoji:"🐦"},
+  {b:"W", word:"Wal", emoji:"🐳"}, {b:"X", word:"Xylophon", emoji:"🎵"},
+  {b:"Y", word:"Yacht", emoji:"⛵"}, {b:"Z", word:"Zebra", emoji:"🦓"}
+];
+
+function genMiniBuchstabenQuestion(level){
+  const r = Math.random();
+  const item = miniPick(MINI_ABC);
+
+  if(r < 0.30){
+    // Welcher Buchstabe ist das? (zeigt Emoji, fragt Anfangsbuchstabe)
+    const distractors = miniShuffle(MINI_ABC.filter(x=>x.b!==item.b)).slice(0,3).map(x=>x.b);
+    const opts = miniShuffle([item.b, ...distractors]);
+    return {type:"multiple", question:`Mit welchem Buchstaben beginnt "${item.word}"?`, illustration:item.emoji,
+      answers: opts, correct: opts.indexOf(item.b),
+      explanation:`${item.word} beginnt mit ${item.b}!`};
+  }
+  if(r < 0.55){
+    // Was beginnt mit Buchstabe X?
+    const distractors = miniShuffle(MINI_ABC.filter(x=>x.b!==item.b)).slice(0,3).map(x=>x.word);
+    const opts = miniShuffle([item.word, ...distractors]);
+    return {type:"multiple", question:`Was beginnt mit dem Buchstaben ${item.b}?`, illustration:"🔤",
+      answers: opts, correct: opts.indexOf(item.word),
+      explanation:`${item.word} beginnt mit ${item.b}! ${item.emoji}`};
+  }
+  if(r < 0.75){
+    // Alphabet-Reihenfolge: was kommt nach Buchstabe X?
+    const idx = MINI_ABC.findIndex(x=>x.b===item.b);
+    if(idx >= 0 && idx < MINI_ABC.length-1){
+      const next = MINI_ABC[idx+1];
+      const distractors = miniShuffle(MINI_ABC.filter(x=>x.b!==next.b && x.b!==item.b)).slice(0,3).map(x=>x.b);
+      const opts = miniShuffle([next.b, ...distractors]);
+      return {type:"multiple", question:`Welcher Buchstabe kommt nach ${item.b} im Alphabet?`, illustration:"🔤",
+        answers: opts, correct: opts.indexOf(next.b),
+        explanation:`Nach ${item.b} kommt ${next.b}!`};
+    }
+  }
+  if(r < 0.90){
+    // Vokal oder Konsonant?
+    const vokale = ["A","E","I","O","U"];
+    const isVokal = vokale.includes(item.b);
+    return {type:"truefalse", question:`${item.b} ist ein Vokal.`, illustration:"🔤",
+      answers:["Richtig","Falsch"], correct: isVokal?0:1,
+      explanation: isVokal ? `Ja! ${item.b} ist ein Vokal (A,E,I,O,U).` : `Nein! ${item.b} ist ein Konsonant.`};
+  }
+  // Wie viele Buchstaben hat ein Wort?
+  const len = item.word.length;
+  const {answers, correct} = miniBuildNumAnswers(len, 1);
+  return {type:"multiple", question:`Wie viele Buchstaben hat "${item.word}"?`, illustration:item.emoji,
+    answers, correct, explanation:`${item.word} hat ${len} Buchstaben!`};
+}
+
+function genMiniBuchstabenLesson(level, count){
+  const qs = [];
+  const usedB = new Set();
+  let tries = 0;
+  while(qs.length < count && tries < count*5){
+    tries++;
+    qs.push(genMiniBuchstabenQuestion(level));
+  }
+  return qs;
+}
+// ── MINI FORMEN GENERATOR (3-5 Jahre) ───────────────────────
+const MINI_SHAPES = [
+  {name:"Kreis", emoji:"⚪", seiten:0, ecken:0},
+  {name:"Dreieck", emoji:"🔺", seiten:3, ecken:3},
+  {name:"Quadrat", emoji:"🟥", seiten:4, ecken:4},
+  {name:"Rechteck", emoji:"▭", seiten:4, ecken:4},
+  {name:"Stern", emoji:"⭐", seiten:5, ecken:5},
+  {name:"Raute", emoji:"🔷", seiten:4, ecken:4},
+  {name:"Sechseck", emoji:"⬡", seiten:6, ecken:6},
+  {name:"Herz", emoji:"❤️", seiten:0, ecken:0}
+];
+const MINI_SHAPE_OBJECTS = [
+  {emoji:"⚽", name:"ein Ball", shape:"Kreis"},
+  {emoji:"🍕", name:"ein Pizzastück", shape:"Dreieck"},
+  {emoji:"📺", name:"ein Fernseher", shape:"Rechteck"},
+  {emoji:"🎲", name:"ein Würfel", shape:"Quadrat"},
+  {emoji:"🌕", name:"der Mond (voll)", shape:"Kreis"},
+  {emoji:"🚦", name:"ein Verkehrsschild (Dreieck)", shape:"Dreieck"},
+  {emoji:"📱", name:"ein Handy", shape:"Rechteck"},
+  {emoji:"🍪", name:"ein Keks", shape:"Kreis"},
+  {emoji:"🎫", name:"eine Eintrittskarte", shape:"Rechteck"},
+  {emoji:"🔶", name:"ein Verkehrshütchen-Schild", shape:"Raute"}
+];
+
+function genMiniFormenQuestion(level){
+  const r = Math.random();
+  const s = miniPick(MINI_SHAPES);
+
+  if(r < 0.30 && s.ecken > 0){
+    const {answers, correct} = miniBuildNumAnswers(s.ecken, 2);
+    return {type:"multiple", question:`Wie viele Ecken hat ${s.emoji===  "⚪"?"ein":(["Dreieck","Quadrat","Rechteck","Sechseck"].includes(s.name)?"ein":"eine")} ${s.name}?`, illustration:s.emoji,
+      answers, correct, explanation:`Ein ${s.name} hat ${s.ecken} Ecken!`};
+  }
+  if(r < 0.55 && s.seiten > 0){
+    const {answers, correct} = miniBuildNumAnswers(s.seiten, 2);
+    return {type:"multiple", question:`Wie viele Seiten hat ein ${s.name}?`, illustration:s.emoji,
+      answers, correct, explanation:`Ein ${s.name} hat ${s.seiten} Seiten!`};
+  }
+  if(r < 0.75){
+    // Gegenstand → welche Form?
+    const o = miniPick(MINI_SHAPE_OBJECTS);
+    const correctShape = MINI_SHAPES.find(x=>x.name===o.shape);
+    const distractors = miniShuffle(MINI_SHAPES.filter(x=>x.name!==o.shape)).slice(0,3).map(x=>x.name);
+    const opts = miniShuffle([o.shape, ...distractors]);
+    return {type:"multiple", question:`Welche Form hat ${o.name}?`, illustration:o.emoji,
+      answers: opts, correct: opts.indexOf(o.shape),
+      explanation:`${o.name[0].toUpperCase()}${o.name.slice(1)} ist ${correctShape?.ecken? "ein "+o.shape : "ein "+o.shape}!`};
+  }
+  if(r < 0.90){
+    // Form erkennen anhand Emoji
+    const distractors = miniShuffle(MINI_SHAPES.filter(x=>x.name!==s.name)).slice(0,3).map(x=>x.name);
+    const opts = miniShuffle([s.name, ...distractors]);
+    return {type:"multiple", question:`Welche Form siehst du hier?`, illustration:s.emoji,
+      answers: opts, correct: opts.indexOf(s.name),
+      explanation:`Das ist ein${s.name==="Raute"||s.name==="Sonne"?"e":""} ${s.name}!`};
+  }
+  // Wahr/Falsch zu Ecken
+  const claimEcken = s.ecken + (Math.random()<0.5?0:miniPick([-1,1,2]));
+  const isTrue = claimEcken === s.ecken;
+  return {type:"truefalse", question:`Ein ${s.name} hat ${claimEcken} Ecken.`, illustration:s.emoji,
+    answers:["Richtig","Falsch"], correct: isTrue?0:1,
+    explanation: isTrue ? `Ja! Ein ${s.name} hat ${s.ecken} Ecken.` : `Nein! Ein ${s.name} hat ${s.ecken} Ecken, nicht ${claimEcken}.`};
+}
+
+function genMiniFormenLesson(level, count){
+  const qs = [];
+  for(let i=0;i<count;i++) qs.push(genMiniFormenQuestion(level));
+  return qs;
+}
+// ── MINI TIERE POOL (3-5 Jahre) ─────────────────────────────
+// Großer Fragenpool zu Tieren: Laute, Lebensraum, Babynamen, Nahrung, Merkmale.
+// Aus diesem Pool werden zur Laufzeit zufällige Teilmengen gezogen.
+
+const MINI_TIERE_POOL = [
+  // Tierlaute
+  {type:"multiple",question:"Welches Tier macht 'Muh'?",illustration:"🐄",answers:["Hund","Katze","Kuh","Schaf"],correct:2,explanation:"Die Kuh macht Muh! 🐄"},
+  {type:"multiple",question:"Welches Tier macht 'Wuff'?",illustration:"🐕",answers:["Hund","Katze","Vogel","Fisch"],correct:0,explanation:"Der Hund macht Wuff! 🐕"},
+  {type:"multiple",question:"Welches Tier macht 'Miau'?",illustration:"🐱",answers:["Hund","Katze","Kuh","Pferd"],correct:1,explanation:"Die Katze macht Miau! 🐱"},
+  {type:"multiple",question:"Welches Tier macht 'Mäh'?",illustration:"🐑",answers:["Schaf","Hund","Katze","Ente"],correct:0,explanation:"Das Schaf macht Mäh! 🐑"},
+  {type:"multiple",question:"Welches Tier macht 'Kikeriki'?",illustration:"🐓",answers:["Ente","Hahn","Gans","Taube"],correct:1,explanation:"Der Hahn macht Kikeriki! 🐓"},
+  {type:"multiple",question:"Welches Tier macht 'Quak'?",illustration:"🐸",answers:["Frosch","Vogel","Fisch","Hund"],correct:0,explanation:"Der Frosch macht Quak! 🐸"},
+  {type:"multiple",question:"Welches Tier macht 'Grunz'?",illustration:"🐖",answers:["Schwein","Pferd","Schaf","Ziege"],correct:0,explanation:"Das Schwein macht Grunz! 🐖"},
+  {type:"multiple",question:"Welches Tier macht 'Hi-Han'?",illustration:"🐴",answers:["Kuh","Pferd","Esel","Schaf"],correct:1,explanation:"Das Pferd wiehert Hi-Han! 🐴"},
+  {type:"multiple",question:"Welches Tier macht 'Schnatter'?",illustration:"🦆",answers:["Ente","Maus","Bär","Wolf"],correct:0,explanation:"Die Ente macht Schnatter! 🦆"},
+  {type:"multiple",question:"Welches Tier brüllt 'Rooaar'?",illustration:"🦁",answers:["Maus","Hase","Löwe","Schaf"],correct:2,explanation:"Der Löwe brüllt laut! 🦁"},
+  {type:"multiple",question:"Welches Tier zwitschert?",illustration:"🐦",answers:["Vogel","Fisch","Wurm","Schnecke"],correct:0,explanation:"Vögel zwitschern! 🐦"},
+  {type:"multiple",question:"Welches Tier summt?",illustration:"🐝",answers:["Biene","Katze","Hund","Maus"],correct:0,explanation:"Bienen summen! 🐝"},
+  {type:"truefalse",question:"Eine Kuh macht Wuff.",illustration:"🐄",answers:["Richtig","Falsch"],correct:1,explanation:"Nein, eine Kuh macht Muh!"},
+  {type:"truefalse",question:"Ein Hund macht Wuff.",illustration:"🐕",answers:["Richtig","Falsch"],correct:0,explanation:"Ja, richtig!"},
+  {type:"truefalse",question:"Eine Katze macht Muh.",illustration:"🐱",answers:["Richtig","Falsch"],correct:1,explanation:"Nein, eine Katze macht Miau!"},
+
+  // Lebensraum
+  {type:"multiple",question:"Wo lebt ein Fisch?",illustration:"🐟",answers:["Im Wasser","Im Baum","In der Erde","In der Luft"],correct:0,explanation:"Fische leben im Wasser! 🐟"},
+  {type:"multiple",question:"Wo lebt ein Vogel meistens?",illustration:"🐦",answers:["Im Wasser","Im Nest auf dem Baum","Unter der Erde","Im Eis"],correct:1,explanation:"Vögel bauen Nester in Bäumen! 🐦"},
+  {type:"multiple",question:"Wo lebt ein Maulwurf?",illustration:"🦫",answers:["Im Wasser","In der Luft","Unter der Erde","Im Baum"],correct:2,explanation:"Der Maulwurf gräbt Gänge unter der Erde!"},
+  {type:"multiple",question:"Wo lebt ein Eisbär?",illustration:"🐻‍❄️",answers:["In der Wüste","Im Regenwald","Im Eis und Schnee","Im Garten"],correct:2,explanation:"Eisbären leben in der kalten Arktis! 🐻‍❄️"},
+  {type:"multiple",question:"Wo lebt ein Kamel?",illustration:"🐪",answers:["In der Wüste","Im Wasser","Im Schnee","Im Wald"],correct:0,explanation:"Kamele leben in heißen Wüsten! 🐪"},
+  {type:"multiple",question:"Wo lebt ein Affe meistens?",illustration:"🐒",answers:["Im Meer","Im Dschungel","Im Schnee","In der Wüste"],correct:1,explanation:"Affen leben im Dschungel in Bäumen! 🐒"},
+  {type:"multiple",question:"Wo lebt ein Pinguin?",illustration:"🐧",answers:["In der Wüste","In der Antarktis","Im Dschungel","Auf dem Bauernhof"],correct:1,explanation:"Pinguine leben in der eisigen Antarktis! 🐧"},
+  {type:"multiple",question:"Wo lebt ein Bauernhof-Schwein?",illustration:"🐖",answers:["Im Wasser","Auf dem Bauernhof","Im Baum","In der Wüste"],correct:1,explanation:"Schweine leben auf dem Bauernhof! 🐖"},
+  {type:"truefalse",question:"Fische leben im Wasser.",illustration:"🐟",answers:["Richtig","Falsch"],correct:0,explanation:"Ja, das stimmt!"},
+  {type:"truefalse",question:"Ein Eisbär lebt in der Wüste.",illustration:"🐻‍❄️",answers:["Richtig","Falsch"],correct:1,explanation:"Nein, Eisbären leben im Eis!"},
+
+  // Tierbabys
+  {type:"multiple",question:"Wie nennt man ein Hundebaby?",illustration:"🐕",answers:["Welpe","Kätzchen","Ferkel","Kalb"],correct:0,explanation:"Ein Hundebaby heißt Welpe!"},
+  {type:"multiple",question:"Wie nennt man ein Katzenbaby?",illustration:"🐱",answers:["Welpe","Kätzchen","Ferkel","Fohlen"],correct:1,explanation:"Ein Katzenbaby heißt Kätzchen!"},
+  {type:"multiple",question:"Wie nennt man ein Pferdebaby?",illustration:"🐴",answers:["Kalb","Fohlen","Lamm","Ferkel"],correct:1,explanation:"Ein Pferdebaby heißt Fohlen!"},
+  {type:"multiple",question:"Wie nennt man ein Kuhbaby?",illustration:"🐄",answers:["Kalb","Fohlen","Welpe","Kätzchen"],correct:0,explanation:"Ein Kuhbaby heißt Kalb!"},
+  {type:"multiple",question:"Wie nennt man ein Schafbaby?",illustration:"🐑",answers:["Ferkel","Lamm","Kalb","Welpe"],correct:1,explanation:"Ein Schafbaby heißt Lamm!"},
+  {type:"multiple",question:"Wie nennt man ein Schweinebaby?",illustration:"🐖",answers:["Ferkel","Kalb","Fohlen","Lamm"],correct:0,explanation:"Ein Schweinebaby heißt Ferkel!"},
+  {type:"multiple",question:"Wie nennt man ein Froschbaby?",illustration:"🐸",answers:["Kaulquappe","Lamm","Ferkel","Welpe"],correct:0,explanation:"Ein Froschbaby heißt Kaulquappe!"},
+  {type:"multiple",question:"Wie nennt man ein Hühnerbaby?",illustration:"🐓",answers:["Küken","Lamm","Welpe","Ferkel"],correct:0,explanation:"Ein Hühnerbaby heißt Küken!"},
+  {type:"truefalse",question:"Ein Hundebaby heißt Welpe.",illustration:"🐕",answers:["Richtig","Falsch"],correct:0,explanation:"Ja, richtig!"},
+  {type:"truefalse",question:"Ein Kuhbaby heißt Fohlen.",illustration:"🐄",answers:["Richtig","Falsch"],correct:1,explanation:"Nein, ein Kuhbaby heißt Kalb!"},
+
+  // Nahrung
+  {type:"multiple",question:"Was frisst ein Hase am liebsten?",illustration:"🐰",answers:["Fleisch","Karotten","Fisch","Käse"],correct:1,explanation:"Hasen mögen Karotten! 🥕"},
+  {type:"multiple",question:"Was frisst ein Löwe?",illustration:"🦁",answers:["Gras","Fleisch","Karotten","Körner"],correct:1,explanation:"Löwen sind Fleischfresser! 🦁"},
+  {type:"multiple",question:"Was frisst eine Kuh?",illustration:"🐄",answers:["Fleisch","Gras","Fisch","Honig"],correct:1,explanation:"Kühe fressen Gras! 🐄"},
+  {type:"multiple",question:"Was frisst ein Bär gerne?",illustration:"🐻",answers:["Nur Steine","Honig und Beeren","Nur Fleisch","Nur Gras"],correct:1,explanation:"Bären lieben Honig und Beeren! 🍯"},
+  {type:"multiple",question:"Was frisst ein Panda am liebsten?",illustration:"🐼",answers:["Fleisch","Bambus","Fisch","Käse"],correct:1,explanation:"Pandas essen vor allem Bambus! 🎋"},
+  {type:"multiple",question:"Was frisst eine Eule?",illustration:"🦉",answers:["Mäuse","Gras","Bambus","Honig"],correct:0,explanation:"Eulen jagen Mäuse! 🦉"},
+  {type:"truefalse",question:"Ein Hase frisst gerne Karotten.",illustration:"🐰",answers:["Richtig","Falsch"],correct:0,explanation:"Ja, das stimmt!"},
+  {type:"truefalse",question:"Eine Kuh frisst Fleisch.",illustration:"🐄",answers:["Richtig","Falsch"],correct:1,explanation:"Nein, Kühe fressen Gras!"},
+
+  // Merkmale / Aussehen
+  {type:"multiple",question:"Welches Tier hat einen sehr langen Hals?",illustration:"🦒",answers:["Elefant","Giraffe","Löwe","Bär"],correct:1,explanation:"Die Giraffe hat einen langen Hals! 🦒"},
+  {type:"multiple",question:"Welches Tier hat einen Rüssel?",illustration:"🐘",answers:["Giraffe","Elefant","Zebra","Affe"],correct:1,explanation:"Der Elefant hat einen Rüssel! 🐘"},
+  {type:"multiple",question:"Welches Tier hat Streifen?",illustration:"🦓",answers:["Zebra","Elefant","Bär","Hase"],correct:0,explanation:"Das Zebra hat schwarz-weiße Streifen! 🦓"},
+  {type:"multiple",question:"Welches Tier hat Stacheln?",illustration:"🦔",answers:["Hase","Igel","Maus","Katze"],correct:1,explanation:"Der Igel hat spitze Stacheln! 🦔"},
+  {type:"multiple",question:"Welches Tier hat einen Panzer?",illustration:"🐢",answers:["Schildkröte","Frosch","Fisch","Schlange"],correct:0,explanation:"Die Schildkröte trägt einen Panzer! 🐢"},
+  {type:"multiple",question:"Welches Tier kann fliegen?",illustration:"🦅",answers:["Adler","Hund","Katze","Fisch"],correct:0,explanation:"Der Adler kann fliegen! 🦅"},
+  {type:"multiple",question:"Welches Tier hat sehr große Ohren?",illustration:"🐘",answers:["Maus","Elefant","Schlange","Fisch"],correct:1,explanation:"Elefanten haben riesige Ohren! 🐘"},
+  {type:"multiple",question:"Welches Tier ändert seine Farbe?",illustration:"🦎",answers:["Chamäleon","Hund","Katze","Hase"],correct:0,explanation:"Das Chamäleon kann seine Farbe wechseln! 🦎"},
+  {type:"truefalse",question:"Eine Giraffe hat einen kurzen Hals.",illustration:"🦒",answers:["Richtig","Falsch"],correct:1,explanation:"Nein, Giraffen haben einen sehr langen Hals!"},
+  {type:"truefalse",question:"Ein Elefant hat einen Rüssel.",illustration:"🐘",answers:["Richtig","Falsch"],correct:0,explanation:"Ja, richtig!"},
+
+  // Haustiere vs. Wildtiere
+  {type:"multiple",question:"Welches Tier ist ein Haustier?",illustration:"🐕",answers:["Löwe","Hund","Tiger","Elefant"],correct:1,explanation:"Der Hund ist ein beliebtes Haustier! 🐕"},
+  {type:"multiple",question:"Welches Tier lebt wild im Dschungel?",illustration:"🐯",answers:["Tiger","Hund","Katze","Hase"],correct:0,explanation:"Tiger leben wild im Dschungel! 🐯"},
+  {type:"multiple",question:"Welches Tier hält man oft als Haustier?",illustration:"🐰",answers:["Löwe","Hase","Wolf","Tiger"],correct:1,explanation:"Hasen sind beliebte Haustiere! 🐰"},
+  {type:"truefalse",question:"Ein Tiger ist ein typisches Haustier.",illustration:"🐯",answers:["Richtig","Falsch"],correct:1,explanation:"Nein, Tiger sind Wildtiere!"},
+
+  // Bauernhof-Spezial
+  {type:"multiple",question:"Welches Tier gibt uns Milch?",illustration:"🐄",answers:["Kuh","Hahn","Ente","Frosch"],correct:0,explanation:"Die Kuh gibt uns Milch! 🐄"},
+  {type:"multiple",question:"Welches Tier gibt uns Eier?",illustration:"🐔",answers:["Kuh","Schwein","Huhn","Schaf"],correct:2,explanation:"Hühner legen Eier! 🐔"},
+  {type:"multiple",question:"Welches Tier gibt uns Wolle?",illustration:"🐑",answers:["Schaf","Kuh","Schwein","Huhn"],correct:0,explanation:"Schafe geben uns Wolle! 🐑"},
+  {type:"truefalse",question:"Hühner geben uns Milch.",illustration:"🐔",answers:["Richtig","Falsch"],correct:1,explanation:"Nein, Kühe geben Milch, Hühner legen Eier!"},
+
+  // Meerestiere
+  {type:"multiple",question:"Welches Tier lebt im Meer und ist sehr groß?",illustration:"🐳",answers:["Wal","Hund","Katze","Maus"],correct:0,explanation:"Der Wal ist riesig und lebt im Meer! 🐳"},
+  {type:"multiple",question:"Welches Tier hat acht Arme?",illustration:"🐙",answers:["Fisch","Krake","Wal","Hai"],correct:1,explanation:"Die Krake (Tintenfisch) hat acht Arme! 🐙"},
+  {type:"multiple",question:"Welches Tier hat scharfe Zähne und lebt im Meer?",illustration:"🦈",answers:["Hai","Delfin","Seestern","Krabbe"],correct:0,explanation:"Der Hai hat sehr scharfe Zähne! 🦈"},
+  {type:"multiple",question:"Welches Tier ist sehr schlau und springt gern?",illustration:"🐬",answers:["Delfin","Hai","Krebs","Muschel"],correct:0,explanation:"Delfine sind schlau und springen gerne! 🐬"},
+  {type:"truefalse",question:"Ein Wal ist ein sehr kleines Tier.",illustration:"🐳",answers:["Richtig","Falsch"],correct:1,explanation:"Nein, Wale sind riesige Tiere!"},
+
+  // Insekten
+  {type:"multiple",question:"Welches Insekt macht Honig?",illustration:"🐝",answers:["Ameise","Biene","Käfer","Spinne"],correct:1,explanation:"Bienen machen Honig! 🐝"},
+  {type:"multiple",question:"Welches Insekt hat bunte Flügel?",illustration:"🦋",answers:["Ameise","Schmetterling","Käfer","Spinne"],correct:1,explanation:"Schmetterlinge haben bunte Flügel! 🦋"},
+  {type:"truefalse",question:"Eine Spinne ist ein Insekt.",illustration:"🕷️",answers:["Richtig","Falsch"],correct:1,explanation:"Nein, Spinnen sind keine Insekten, sie haben 8 Beine!"},
+  {type:"multiple",question:"Wie viele Beine hat eine Spinne?",illustration:"🕷️",answers:["4","6","8","10"],correct:2,explanation:"Spinnen haben 8 Beine! 🕷️"}
+];
+
+function genMiniTiereLesson(level, count){
+  const shuffled = miniShuffle(MINI_TIERE_POOL);
+  return shuffled.slice(0, Math.min(count, shuffled.length));
+}
+// ── MINI KOERPER POOL (3-5 Jahre) ───────────────────────────
+const MINI_KOERPER_POOL = [
+  // Sinne
+  {type:"multiple",question:"Womit siehst du?",illustration:"👀",answers:["Ohr","Nase","Augen","Mund"],correct:2,explanation:"Mit den Augen siehst du!"},
+  {type:"multiple",question:"Womit riechst du?",illustration:"👃",answers:["Augen","Nase","Ohr","Mund"],correct:1,explanation:"Mit der Nase riechst du!"},
+  {type:"multiple",question:"Womit hörst du?",illustration:"👂",answers:["Augen","Mund","Ohren","Nase"],correct:2,explanation:"Mit den Ohren hörst du!"},
+  {type:"multiple",question:"Womit schmeckst du dein Essen?",illustration:"😋",answers:["Mit den Ohren","Mit der Zunge","Mit den Augen","Mit der Nase"],correct:1,explanation:"Mit der Zunge schmeckst du!"},
+  {type:"multiple",question:"Womit kannst du Dinge fühlen?",illustration:"🖐️",answers:["Füßen","Händen","Ohren","Augen"],correct:1,explanation:"Mit den Händen fühlst du!"},
+  {type:"multiple",question:"Wie viele Sinne hat ein Mensch?",illustration:"🧠",answers:["3","4","5","6"],correct:2,explanation:"5 Sinne: Sehen, Hören, Riechen, Schmecken, Fühlen!"},
+  {type:"truefalse",question:"Der Mund wird zum Sprechen benutzt.",illustration:"👄",answers:["Richtig","Falsch"],correct:0,explanation:"Ja!"},
+  {type:"truefalse",question:"Wir riechen mit den Augen.",illustration:"👃",answers:["Richtig","Falsch"],correct:1,explanation:"Nein! Wir riechen mit der Nase."},
+  {type:"truefalse",question:"Mit den Augen können wir Farben sehen.",illustration:"🌈",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Unsere Augen sehen Farben."},
+  {type:"multiple",question:"Was schützt unsere Augen in der Sonne?",illustration:"😎",answers:["Handschuhe","Mütze","Sonnenbrille","Schal"],correct:2,explanation:"Eine Sonnenbrille schützt die Augen! 😎"},
+  {type:"multiple",question:"Womit schnuppern wir an Blumen?",illustration:"🌸",answers:["Mund","Augen","Nase","Ohren"],correct:2,explanation:"Mit der Nase schnuppern wir!"},
+
+  // Anzahl-Fragen
+  {type:"multiple",question:"Wie viele Augen hat ein Mensch?",illustration:"👁️",answers:["1","3","4","2"],correct:3,explanation:"Ein Mensch hat 2 Augen!"},
+  {type:"multiple",question:"Wie viele Ohren hat ein Mensch?",illustration:"👂",answers:["1","2","3","4"],correct:1,explanation:"Ein Mensch hat 2 Ohren!"},
+  {type:"multiple",question:"Wie viele Arme hat ein Mensch?",illustration:"💪",answers:["4","3","1","2"],correct:3,explanation:"Ein Mensch hat 2 Arme!"},
+  {type:"multiple",question:"Wie viele Beine hat ein Mensch?",illustration:"🦵",answers:["4","3","2","1"],correct:2,explanation:"Ein Mensch hat 2 Beine!"},
+  {type:"multiple",question:"Wie viele Finger hat eine Hand?",illustration:"✋",answers:["3","4","5","6"],correct:2,explanation:"Eine Hand hat 5 Finger!"},
+  {type:"multiple",question:"Wie viele Finger haben beide Hände zusammen?",illustration:"👐",answers:["8","9","10","12"],correct:2,explanation:"Beide Hände haben 10 Finger!"},
+  {type:"multiple",question:"Wie viele Zehen hat ein Mensch insgesamt?",illustration:"🦶",answers:["8","9","10","12"],correct:2,explanation:"Ein Mensch hat 10 Zehen!"},
+  {type:"multiple",question:"Wie viele Nasen hat ein Mensch?",illustration:"👃",answers:["1","2","3","0"],correct:0,explanation:"Ein Mensch hat 1 Nase!"},
+  {type:"multiple",question:"Wie viele Münder hat ein Mensch?",illustration:"👄",answers:["1","2","3","0"],correct:0,explanation:"Ein Mensch hat 1 Mund!"},
+  {type:"truefalse",question:"Wir haben zwei Hände.",illustration:"👐",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Eine linke und eine rechte Hand."},
+  {type:"truefalse",question:"Wir haben drei Augen.",illustration:"👀",answers:["Richtig","Falsch"],correct:1,explanation:"Nein, wir haben 2 Augen!"},
+  {type:"truefalse",question:"Wir haben 10 Finger insgesamt.",illustration:"🤲",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! 5 pro Hand = 10 insgesamt."},
+
+  // Funktionen / Was macht man womit
+  {type:"multiple",question:"Was sind die Zehen?",illustration:"🦶",answers:["Finger der Hand","Zähne","Finger am Fuß","Teile des Ohrs"],correct:2,explanation:"Zehen sind die Finger am Fuß!"},
+  {type:"multiple",question:"Was benutzt du zum Kauen?",illustration:"😁",answers:["Ohren","Augen","Zähne","Nase"],correct:2,explanation:"Mit den Zähnen kauen wir!"},
+  {type:"multiple",question:"Womit läufst du?",illustration:"🏃",answers:["Mit den Händen","Mit den Beinen und Füßen","Mit dem Kopf","Mit den Ohren"],correct:1,explanation:"Mit Beinen und Füßen laufen wir!"},
+  {type:"multiple",question:"Womit greifst du Dinge?",illustration:"🤚",answers:["Füßen","Händen","Kopf","Ohren"],correct:1,explanation:"Mit den Händen greifst du!"},
+  {type:"multiple",question:"Was schützt unser Gehirn?",illustration:"🧠",answers:["Die Haut","Die Rippen","Der Schädel","Die Muskeln"],correct:2,explanation:"Der Schädel schützt unser Gehirn!"},
+  {type:"multiple",question:"Womit klatschen wir?",illustration:"👏",answers:["Mit den Füßen","Mit den Händen","Mit dem Mund","Mit den Ohren"],correct:1,explanation:"Mit den Händen klatschen wir!"},
+  {type:"multiple",question:"Womit können wir springen?",illustration:"🦘",answers:["Mit den Armen","Mit den Beinen","Mit dem Kopf","Mit den Ohren"],correct:1,explanation:"Mit den Beinen springen wir!"},
+  {type:"multiple",question:"Was benutzt man zum Schreiben oder Malen?",illustration:"✍️",answers:["Den Fuß","Die Hand","Den Kopf","Die Schulter"],correct:1,explanation:"Mit der Hand schreiben und malen wir!"},
+  {type:"multiple",question:"Womit winken wir zum Abschied?",illustration:"👋",answers:["Die Beine","Die Hände","Den Kopf","Die Ohren"],correct:1,explanation:"Mit den Händen winken wir!"},
+  {type:"multiple",question:"Was benutzen wir zum Treten eines Balls?",illustration:"⚽",answers:["Hände","Füße","Kopf","Ohren"],correct:1,explanation:"Mit den Füßen treten wir den Ball!"},
+  {type:"truefalse",question:"Wir laufen mit den Armen.",illustration:"🏃",answers:["Richtig","Falsch"],correct:1,explanation:"Nein! Wir laufen mit Beinen und Füßen."},
+  {type:"truefalse",question:"Der Daumen ist der dickste Finger.",illustration:"👍",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Der Daumen ist breiter als die anderen."},
+
+  // Innen im Körper
+  {type:"multiple",question:"Was pumpt das Blut durch unseren Körper?",illustration:"❤️",answers:["Lunge","Gehirn","Magen","Herz"],correct:3,explanation:"Das Herz pumpt das Blut!"},
+  {type:"multiple",question:"Womit atmest du?",illustration:"🫁",answers:["Herz","Magen","Lunge","Gehirn"],correct:2,explanation:"Mit der Lunge atmest du!"},
+  {type:"multiple",question:"Was macht der Magen?",illustration:"😋",answers:["Pumpt Blut","Verdaut das Essen","Atmet","Denkt"],correct:1,explanation:"Der Magen verdaut unser Essen!"},
+  {type:"multiple",question:"Womit denkst du?",illustration:"🧠",answers:["Herz","Magen","Lunge","Gehirn"],correct:3,explanation:"Mit dem Gehirn denkst du!"},
+  {type:"multiple",question:"Was spürt man, wenn man die Hand aufs Herz legt?",illustration:"💓",answers:["Das Atmen","Den Herzschlag","Den Magen","Das Denken"],correct:1,explanation:"Man spürt den Herzschlag!"},
+  {type:"truefalse",question:"Das Herz schlägt auch im Schlaf.",illustration:"💓",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Das Herz schlägt immer, auch im Schlaf."},
+  {type:"truefalse",question:"Wir müssen atmen, um zu leben.",illustration:"🫁",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Ohne Atmen können wir nicht leben."},
+  {type:"truefalse",question:"Knochen halten unseren Körper aufrecht.",illustration:"🦴",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Unser Skelett gibt uns Halt."},
+
+  // Gesundheit & Pflege
+  {type:"multiple",question:"Warum sollten wir uns die Zähne putzen?",illustration:"🪥",answers:["Damit sie glänzen","Damit sie gesund bleiben","Zum Spaß","Weil Mama es sagt"],correct:1,explanation:"Zähneputzen hält die Zähne gesund!"},
+  {type:"multiple",question:"Was tut uns gut, wenn wir krank sind?",illustration:"🤒",answers:["Viel Sport","Ruhe und viel trinken","Viel arbeiten","Im Regen spielen"],correct:1,explanation:"Bei Krankheit braucht der Körper Ruhe!"},
+  {type:"multiple",question:"Warum müssen wir Wasser trinken?",illustration:"💧",answers:["Damit wir schlafen","Weil der Körper Wasser braucht","Damit wir sehen","Weil es lecker ist"],correct:1,explanation:"Unser Körper braucht viel Wasser!"},
+  {type:"multiple",question:"Warum schlafen wir?",illustration:"😴",answers:["Weil wir müssen","Damit der Körper sich erholt","Weil es dunkel ist","Weil nichts zu tun ist"],correct:1,explanation:"Im Schlaf erholt sich der Körper!"},
+  {type:"multiple",question:"Warum sollten wir uns die Hände waschen?",illustration:"🧼",answers:["Damit sie weich sind","Um Keime zu entfernen","Zum Spaß","Weil sie nass sein sollen"],correct:1,explanation:"Händewaschen entfernt Keime und schützt uns!"},
+  {type:"truefalse",question:"Gemüse und Obst sind gesund für unseren Körper.",illustration:"🥦",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Sie geben uns wichtige Vitamine."},
+  {type:"multiple",question:"Was hilft unserem Körper stark zu werden?",illustration:"💪",answers:["Nur Süßigkeiten","Gesundes Essen und Bewegung","Den ganzen Tag sitzen","Nichts trinken"],correct:1,explanation:"Gesundes Essen und Bewegung machen stark!"},
+
+  // Wachstum & Vergleich
+  {type:"multiple",question:"Was passiert, wenn man älter wird?",illustration:"📏",answers:["Man wird kleiner","Man wird größer","Man bleibt gleich","Man verschwindet"],correct:1,explanation:"Kinder wachsen und werden größer!"},
+  {type:"truefalse",question:"Babys sind größer als Erwachsene.",illustration:"👶",answers:["Richtig","Falsch"],correct:1,explanation:"Nein! Erwachsene sind größer als Babys."},
+  {type:"multiple",question:"Was wächst, während du älter wirst?",illustration:"📏",answers:["Nur die Haare","Der ganze Körper","Nur die Füße","Nichts"],correct:1,explanation:"Der ganze Körper wächst, wenn wir älter werden!"}
+];
+
+function genMiniKoerperLesson(level, count){
+  const shuffled = miniShuffle(MINI_KOERPER_POOL);
+  return shuffled.slice(0, Math.min(count, shuffled.length));
+}
+// ── MINI FARBEN POOL + GENERATOR (3-5 Jahre) ────────────────
+const MINI_COLOR_OBJECTS = [
+  {name:"eine reife Tomate", emoji:"🍅", color:"Rot"},
+  {name:"eine Banane", emoji:"🍌", color:"Gelb"},
+  {name:"der Himmel an einem schönen Tag", emoji:"☀️", color:"Blau"},
+  {name:"Gras", emoji:"🌿", color:"Grün"},
+  {name:"eine Karotte", emoji:"🥕", color:"Orange"},
+  {name:"Schnee", emoji:"❄️", color:"Weiß"},
+  {name:"die Nacht", emoji:"🌙", color:"Schwarz"},
+  {name:"eine Zitrone", emoji:"🍋", color:"Gelb"},
+  {name:"ein Frosch", emoji:"🐸", color:"Grün"},
+  {name:"eine Erdbeere", emoji:"🍓", color:"Rot"},
+  {name:"eine Aubergine", emoji:"🍆", color:"Violett"},
+  {name:"Kohle", emoji:"⚫", color:"Schwarz"},
+  {name:"eine Orange", emoji:"🍊", color:"Orange"},
+  {name:"ein Flamingo", emoji:"🦩", color:"Pink"},
+  {name:"eine Pflaume", emoji:"🟣", color:"Violett"},
+  {name:"Milch", emoji:"🥛", color:"Weiß"},
+  {name:"das Meer", emoji:"🌊", color:"Blau"},
+  {name:"eine Sonnenblume", emoji:"🌻", color:"Gelb"},
+  {name:"ein Apfel (reif, rot)", emoji:"🍎", color:"Rot"},
+  {name:"eine Avocado innen", emoji:"🥑", color:"Grün"},
+  {name:"Schokolade", emoji:"🍫", color:"Braun"},
+  {name:"ein Marienkäfer", emoji:"🐞", color:"Rot"},
+  {name:"eine Kiwi innen", emoji:"🥝", color:"Grün"},
+  {name:"ein Schwan", emoji:"🦢", color:"Weiß"},
+  {name:"Erde/Boden", emoji:"🟤", color:"Braun"},
+];
+
+const MINI_COLOR_LIST = ["Rot","Blau","Gelb","Grün","Orange","Schwarz","Weiß","Violett","Pink","Braun"];
+
+function genMiniFarbenQuestion(level){
+  const r = Math.random();
+  const o = miniPick(MINI_COLOR_OBJECTS);
+
+  if(r < 0.45){
+    // Welche Farbe hat X?
+    const distractors = miniShuffle(MINI_COLOR_LIST.filter(c=>c!==o.color)).slice(0,3);
+    const opts = miniShuffle([o.color, ...distractors]);
+    return {type:"multiple", question:`Welche Farbe hat ${o.name}?`, illustration:o.emoji,
+      answers: opts, correct: opts.indexOf(o.color),
+      explanation:`${o.name[0].toUpperCase()}${o.name.slice(1)} ist ${o.color.toLowerCase()}! ${o.emoji}`};
+  }
+  if(r < 0.75){
+    // Was ist Farbe X? (umgekehrt)
+    const color = miniPick(MINI_COLOR_LIST);
+    const matching = MINI_COLOR_OBJECTS.filter(x=>x.color===color);
+    if(matching.length === 0) return genMiniFarbenQuestion(level);
+    const correct = miniPick(matching);
+    const distractors = miniShuffle(MINI_COLOR_OBJECTS.filter(x=>x.color!==color)).slice(0,3).map(x=>x.name);
+    const opts = miniShuffle([correct.name, ...distractors]);
+    return {type:"multiple", question:`Was ist ${color.toLowerCase()}?`, illustration:correct.emoji,
+      answers: opts, correct: opts.indexOf(correct.name),
+      explanation:`${correct.name[0].toUpperCase()}${correct.name.slice(1)} ist ${color.toLowerCase()}!`};
+  }
+  // Wahr/Falsch
+  const claimRight = Math.random() < 0.5;
+  const claimColor = claimRight ? o.color : miniPick(MINI_COLOR_LIST.filter(c=>c!==o.color));
+  return {type:"truefalse", question:`${o.name[0].toUpperCase()}${o.name.slice(1)} ist ${claimColor.toLowerCase()}.`, illustration:o.emoji,
+    answers:["Richtig","Falsch"], correct: claimRight?0:1,
+    explanation: claimRight ? `Ja! ${o.emoji}` : `Nein! ${o.name[0].toUpperCase()}${o.name.slice(1)} ist ${o.color.toLowerCase()}, nicht ${claimColor.toLowerCase()}.`};
+}
+
+const MINI_FARBEN_POOL_EXTRA = [
+  {type:"multiple",question:"Welche zwei Farben ergeben Grün, wenn man sie mischt?",illustration:"🎨",answers:["Rot und Gelb","Blau und Gelb","Rot und Blau","Schwarz und Weiß"],correct:1,explanation:"Blau und Gelb gemischt ergeben Grün!"},
+  {type:"multiple",question:"Welche zwei Farben ergeben Orange, wenn man sie mischt?",illustration:"🎨",answers:["Rot und Gelb","Blau und Grün","Schwarz und Weiß","Rot und Blau"],correct:0,explanation:"Rot und Gelb gemischt ergeben Orange!"},
+  {type:"multiple",question:"Welche Farbe entsteht, wenn man Schwarz und Weiß mischt?",illustration:"🎨",answers:["Grau","Braun","Lila","Pink"],correct:0,explanation:"Schwarz und Weiß gemischt ergeben Grau!"},
+  {type:"multiple",question:"Wie viele Farben hat ein Regenbogen?",illustration:"🌈",answers:["3","5","7","10"],correct:2,explanation:"Ein Regenbogen hat 7 Farben!"},
+  {type:"truefalse",question:"Rot und Blau gemischt ergeben Violett.",illustration:"🎨",answers:["Richtig","Falsch"],correct:0,explanation:"Ja, das ergibt Violett (Lila)!"},
+  {type:"multiple",question:"Welche Farbe hat eine Ampel, wenn man stehen bleiben soll?",illustration:"🚦",answers:["Grün","Gelb","Rot","Blau"],correct:2,explanation:"Bei Rot bleibt man stehen!"},
+  {type:"multiple",question:"Welche Farbe hat eine Ampel, wenn man gehen darf?",illustration:"🚦",answers:["Rot","Grün","Gelb","Blau"],correct:1,explanation:"Bei Grün darf man gehen!"},
+  {type:"multiple",question:"Welche Farbe hat Feuer meistens?",illustration:"🔥",answers:["Blau","Grün","Orange-Rot","Violett"],correct:2,explanation:"Feuer leuchtet orange-rot!"},
+  {type:"multiple",question:"Welche Farbe haben die meisten Blätter im Sommer?",illustration:"🍃",answers:["Grün","Rot","Blau","Schwarz"],correct:0,explanation:"Blätter sind im Sommer meist grün!"},
+  {type:"multiple",question:"Welche Farbe bekommen viele Blätter im Herbst?",illustration:"🍂",answers:["Blau","Braun-Orange","Grün","Weiß"],correct:1,explanation:"Im Herbst werden Blätter braun-orange!"},
+  {type:"truefalse",question:"Eine Ampel hat die Farben Rot, Gelb und Grün.",illustration:"🚦",answers:["Richtig","Falsch"],correct:0,explanation:"Ja, genau diese drei Farben!"}
+];
+
+function genMiniFarbenLesson(level, count){
+  const generated = [];
+  const numGen = Math.ceil(count * 0.7);
+  for(let i=0;i<numGen;i++) generated.push(genMiniFarbenQuestion(level));
+  const extras = miniShuffle(MINI_FARBEN_POOL_EXTRA).slice(0, count - numGen);
+  return miniShuffle([...generated, ...extras]);
+}
+
+// ── JUNIOR MATHE GENERATOR (6-9 Jahre) ──────────────────────
+function jrRandInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function jrPick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function jrShuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function jrBuildNumAnswers(correct, spread, maxVal){
+  const opts = new Set([correct]);
+  let curSpread = Math.max(spread, 3);
+  let guard = 0;
+  while(opts.size < 4 && guard < 200){
+    guard++;
+    const d = correct + jrRandInt(-curSpread, curSpread);
+    if(d >= 0 && d <= maxVal && d !== correct) opts.add(d);
+    if(guard % 20 === 0) curSpread += 3;
+  }
+  let filler = correct + 1;
+  while(opts.size < 4){
+    if(filler >= 0 && filler <= maxVal+50 && !opts.has(filler)) opts.add(filler);
+    filler++;
+  }
+  const arr = jrShuffle([...opts]);
+  return { answers: arr.map(String), correct: arr.indexOf(correct) };
+}
+
+// level 0: Plus bis 20, level 1: Minus bis 20, level 2: Plus bis 100, level 3: Minus bis 100, level 4: 1x1 (2er/5er), level 5: 1x1 (3er/4er)
+function genJuniorMatheQuestion(level){
+  if(level === 0){
+    const a = jrRandInt(3, 17), b = jrRandInt(1, 19-a);
+    const sum = a+b;
+    const {answers, correct} = jrBuildNumAnswers(sum, 2, 25);
+    return {type:"multiple", question:`Was ergibt ${a} + ${b}?`, illustration:"➕", answers, correct, explanation:`${a}+${b}=${sum} ✅`};
+  }
+  if(level === 1){
+    const a = jrRandInt(5, 20), b = jrRandInt(1, a-1);
+    const diff = a-b;
+    const {answers, correct} = jrBuildNumAnswers(diff, 2, 25);
+    return {type:"multiple", question:`Was ergibt ${a} – ${b}?`, illustration:"➖", answers, correct, explanation:`${a}-${b}=${diff} ✅`};
+  }
+  if(level === 2){
+    const a = jrRandInt(15, 70), b = jrRandInt(10, Math.min(40, 99-a));
+    const sum = a+b;
+    const {answers, correct} = jrBuildNumAnswers(sum, 3, 110);
+    return {type:"multiple", question:`Was ergibt ${a} + ${b}?`, illustration:"➕", answers, correct, explanation:`${a}+${b}=${sum} ✅`};
+  }
+  if(level === 3){
+    const a = jrRandInt(40, 99), b = jrRandInt(10, a-5);
+    const diff = a-b;
+    const {answers, correct} = jrBuildNumAnswers(diff, 3, 110);
+    return {type:"multiple", question:`Was ergibt ${a} – ${b}?`, illustration:"➖", answers, correct, explanation:`${a}-${b}=${diff} ✅`};
+  }
+  if(level === 4){
+    const f = jrPick([2,5]);
+    const m = jrRandInt(1,10);
+    const prod = f*m;
+    const {answers, correct} = jrBuildNumAnswers(prod, 4, 60);
+    return {type:"multiple", question:`Was ergibt ${f} × ${m}?`, illustration:"✖️", answers, correct, explanation:`${f}×${m}=${prod} ✅`};
+  }
+  // level 5+
+  const f = jrPick([3,4]);
+  const m = jrRandInt(1,10);
+  const prod = f*m;
+  const {answers, correct} = jrBuildNumAnswers(prod, 4, 60);
+  return {type:"multiple", question:`Was ergibt ${f} × ${m}?`, illustration:"✖️", answers, correct, explanation:`${f}×${m}=${prod} ✅`};
+}
+
+function genJuniorMatheTrueFalse(level){
+  if(level <= 1){
+    const a = jrRandInt(2, 15), b = jrRandInt(1, 15);
+    const realSum = a+b;
+    const showCorrect = Math.random() < 0.5;
+    const shown = showCorrect ? realSum : realSum + jrPick([-3,-2,-1,1,2,3]);
+    return {type:"truefalse", question:`${a} + ${b} = ${shown}`, illustration:"➕",
+      answers:["Richtig","Falsch"], correct: showCorrect?0:1,
+      explanation: showCorrect ? `Ja! ${a}+${b}=${realSum}.` : `Nein! ${a}+${b}=${realSum}, nicht ${shown}.`};
+  }
+  if(level <= 3){
+    const a = jrRandInt(30, 90), b = jrRandInt(10, a-5);
+    const realDiff = a-b;
+    const showCorrect = Math.random() < 0.5;
+    const shown = showCorrect ? realDiff : realDiff + jrPick([-4,-3,-2,2,3,4]);
+    return {type:"truefalse", question:`${a} – ${b} = ${shown}`, illustration:"➖",
+      answers:["Richtig","Falsch"], correct: showCorrect?0:1,
+      explanation: showCorrect ? `Ja! ${a}-${b}=${realDiff}.` : `Nein! ${a}-${b}=${realDiff}, nicht ${shown}.`};
+  }
+  const f = level === 4 ? jrPick([2,5]) : jrPick([3,4]);
+  const m = jrRandInt(1,10);
+  const realProd = f*m;
+  const showCorrect = Math.random() < 0.5;
+  const shown = showCorrect ? realProd : realProd + jrPick([-f,f,-2*f,2*f].filter(d=>realProd+d>0));
+  return {type:"truefalse", question:`${f} × ${m} = ${shown}`, illustration:"✖️",
+    answers:["Richtig","Falsch"], correct: showCorrect?0:1,
+    explanation: showCorrect ? `Ja! ${f}×${m}=${realProd}.` : `Nein! ${f}×${m}=${realProd}, nicht ${shown}.`};
+}
+
+function genJuniorMatheLesson(level, count){
+  const qs = [];
+  for(let i=0;i<count;i++){
+    qs.push(Math.random() < 0.25 ? genJuniorMatheTrueFalse(level) : genJuniorMatheQuestion(level));
+  }
+  return qs;
+}
+// ── JUNIOR ENGLISCH GENERATOR + POOL (6-9 Jahre) ────────────
+const JR_EN_COLORS = [
+  {de:"Rot",en:"Red",emoji:"🔴"},{de:"Blau",en:"Blue",emoji:"🔵"},{de:"Gelb",en:"Yellow",emoji:"🟡"},
+  {de:"Grün",en:"Green",emoji:"🟢"},{de:"Orange",en:"Orange",emoji:"🟠"},{de:"Schwarz",en:"Black",emoji:"⚫"},
+  {de:"Weiß",en:"White",emoji:"⚪"},{de:"Lila",en:"Purple",emoji:"🟣"},{de:"Braun",en:"Brown",emoji:"🟤"},{de:"Pink",en:"Pink",emoji:"🌸"}
+];
+const JR_EN_ANIMALS = [
+  {de:"Hund",en:"Dog",emoji:"🐕"},{de:"Katze",en:"Cat",emoji:"🐱"},{de:"Pferd",en:"Horse",emoji:"🐴"},
+  {de:"Kuh",en:"Cow",emoji:"🐄"},{de:"Schwein",en:"Pig",emoji:"🐖"},{de:"Schaf",en:"Sheep",emoji:"🐑"},
+  {de:"Hase",en:"Rabbit",emoji:"🐰"},{de:"Vogel",en:"Bird",emoji:"🐦"},{de:"Fisch",en:"Fish",emoji:"🐟"},
+  {de:"Maus",en:"Mouse",emoji:"🐭"},{de:"Elefant",en:"Elephant",emoji:"🐘"},{de:"Löwe",en:"Lion",emoji:"🦁"},
+  {de:"Bär",en:"Bear",emoji:"🐻"},{de:"Affe",en:"Monkey",emoji:"🐒"},{de:"Frosch",en:"Frog",emoji:"🐸"}
+];
+const JR_EN_FAMILY = [
+  {de:"Mutter",en:"Mother",emoji:"👩"},{de:"Vater",en:"Father",emoji:"👨"},{de:"Schwester",en:"Sister",emoji:"👧"},
+  {de:"Bruder",en:"Brother",emoji:"👦"},{de:"Großmutter",en:"Grandmother",emoji:"👵"},{de:"Großvater",en:"Grandfather",emoji:"👴"},
+  {de:"Baby",en:"Baby",emoji:"👶"},{de:"Familie",en:"Family",emoji:"👨‍👩‍👧‍👦"}
+];
+const JR_EN_NUMBERS = [
+  {de:"eins",en:"one",n:1},{de:"zwei",en:"two",n:2},{de:"drei",en:"three",n:3},{de:"vier",en:"four",n:4},
+  {de:"fünf",en:"five",n:5},{de:"sechs",en:"six",n:6},{de:"sieben",en:"seven",n:7},{de:"acht",en:"eight",n:8},
+  {de:"neun",en:"nine",n:9},{de:"zehn",en:"ten",n:10}
+];
+const JR_EN_GREETINGS = [
+  {de:"Hallo",en:"Hello"},{de:"Tschüss",en:"Goodbye"},{de:"Guten Morgen",en:"Good morning"},
+  {de:"Guten Abend",en:"Good evening"},{de:"Bitte",en:"Please"},{de:"Danke",en:"Thank you"},
+  {de:"Wie geht es dir?",en:"How are you?"},{de:"Mir geht es gut",en:"I am fine"}
+];
+
+function jrEnBuildMC(correctEn, pool, key){
+  const distractors = jrShuffle(pool.filter(x=>x[key]!==correctEn)).slice(0,3).map(x=>x[key]);
+  const opts = jrShuffle([correctEn, ...distractors]);
+  return { answers: opts, correct: opts.indexOf(correctEn) };
+}
+
+function genJrEnglischQuestion(level){
+  // level 0: greetings, 1: numbers, 2: colors, 3: family, 4: animals
+  const pools = [
+    {pool: JR_EN_GREETINGS, type:"greeting"},
+    {pool: JR_EN_NUMBERS, type:"number"},
+    {pool: JR_EN_COLORS, type:"color"},
+    {pool: JR_EN_FAMILY, type:"family"},
+    {pool: JR_EN_ANIMALS, type:"animal"}
+  ];
+  const {pool, type} = pools[Math.min(level, pools.length-1)];
+  const item = jrPick(pool);
+  const r = Math.random();
+
+  if(type === "greeting"){
+    if(r < 0.5){
+      const {answers, correct} = jrEnBuildMC(item.en, pool, "en");
+      return {type:"multiple", question:`Wie sagt man "${item.de}" auf Englisch?`, illustration:"🇬🇧",
+        answers, correct, explanation:`"${item.de}" heißt "${item.en}" auf Englisch!`};
+    }
+    const {answers, correct} = jrEnBuildMC(item.de, pool, "de");
+    return {type:"multiple", question:`Was bedeutet "${item.en}" auf Deutsch?`, illustration:"🇬🇧",
+      answers, correct, explanation:`"${item.en}" bedeutet "${item.de}"!`};
+  }
+  if(type === "number"){
+    if(r < 0.4){
+      const {answers, correct} = jrEnBuildMC(item.en, pool, "en");
+      return {type:"multiple", question:`Wie heißt die Zahl ${item.n} auf Englisch?`, illustration:"🔢",
+        answers, correct, explanation:`${item.n} heißt "${item.en}" auf Englisch!`};
+    }
+    if(r < 0.7){
+      const distractors = jrShuffle(pool.filter(x=>x.n!==item.n)).slice(0,3).map(x=>String(x.n));
+      const opts = jrShuffle([String(item.n), ...distractors]);
+      return {type:"multiple", question:`Welche Zahl ist "${item.en}"?`, illustration:"🔢",
+        answers: opts, correct: opts.indexOf(String(item.n)), explanation:`"${item.en}" ist die Zahl ${item.n}!`};
+    }
+    const {answers, correct} = jrEnBuildMC(item.de, pool, "de");
+    return {type:"multiple", question:`Was bedeutet "${item.en}" auf Deutsch?`, illustration:"🔢",
+      answers, correct, explanation:`"${item.en}" bedeutet "${item.de}"!`};
+  }
+  if(type === "color"){
+    if(r < 0.5){
+      const {answers, correct} = jrEnBuildMC(item.en, pool, "en");
+      return {type:"multiple", question:`Wie heißt die Farbe "${item.de}" auf Englisch?`, illustration:item.emoji,
+        answers, correct, explanation:`"${item.de}" heißt "${item.en}" auf Englisch!`};
+    }
+    const {answers, correct} = jrEnBuildMC(item.de, pool, "de");
+    return {type:"multiple", question:`Was bedeutet die Farbe "${item.en}" auf Deutsch?`, illustration:item.emoji,
+      answers, correct, explanation:`"${item.en}" bedeutet "${item.de}"!`};
+  }
+  if(type === "family"){
+    if(r < 0.5){
+      const {answers, correct} = jrEnBuildMC(item.en, pool, "en");
+      return {type:"multiple", question:`Wie heißt "${item.de}" auf Englisch?`, illustration:item.emoji,
+        answers, correct, explanation:`"${item.de}" heißt "${item.en}" auf Englisch!`};
+    }
+    const {answers, correct} = jrEnBuildMC(item.de, pool, "de");
+    return {type:"multiple", question:`Was bedeutet "${item.en}" auf Deutsch?`, illustration:item.emoji,
+      answers, correct, explanation:`"${item.en}" bedeutet "${item.de}"!`};
+  }
+  // animal
+  if(r < 0.5){
+    const {answers, correct} = jrEnBuildMC(item.en, pool, "en");
+    return {type:"multiple", question:`Wie heißt "${item.de}" auf Englisch?`, illustration:item.emoji,
+      answers, correct, explanation:`"${item.de}" heißt "${item.en}" auf Englisch!`};
+  }
+  const {answers, correct} = jrEnBuildMC(item.de, pool, "de");
+  return {type:"multiple", question:`Was bedeutet "${item.en}" auf Deutsch?`, illustration:item.emoji,
+    answers, correct, explanation:`"${item.en}" bedeutet "${item.de}"!`};
+}
+
+function genJrEnglischTrueFalse(level){
+  const pools = [JR_EN_GREETINGS, JR_EN_NUMBERS, JR_EN_COLORS, JR_EN_FAMILY, JR_EN_ANIMALS];
+  const pool = pools[Math.min(level, pools.length-1)];
+  const item = jrPick(pool);
+  const showCorrect = Math.random() < 0.5;
+  let shownEn = item.en;
+  if(!showCorrect){
+    const others = pool.filter(x=>x.en !== item.en);
+    shownEn = jrPick(others).en;
+  }
+  return {type:"truefalse", question:`"${item.de}" heißt "${shownEn}" auf Englisch.`, illustration:"🇬🇧",
+    answers:["Richtig","Falsch"], correct: showCorrect?0:1,
+    explanation: showCorrect ? `Ja, genau!` : `Nein! "${item.de}" heißt "${item.en}".`};
+}
+
+function genJrEnglischLesson(level, count){
+  const qs = [];
+  for(let i=0;i<count;i++){
+    qs.push(Math.random() < 0.2 ? genJrEnglischTrueFalse(level) : genJrEnglischQuestion(level));
+  }
+  return qs;
+}
+// ── JUNIOR LESEN POOL (6-9 Jahre) ───────────────────────────
+const JR_LESEN_POOL = [
+  // Silben & Wörter
+  {type:"multiple",question:"Wie viele Silben hat HUND?",illustration:"🐕",answers:["1","2","3","4"],correct:0,explanation:"HUND hat 1 Silbe!"},
+  {type:"multiple",question:"Wie viele Silben hat SCHULE?",illustration:"🏫",answers:["1","2","3","4"],correct:1,explanation:"SCHU-LE = 2 Silben!"},
+  {type:"multiple",question:"Wie viele Silben hat ELEFANT?",illustration:"🐘",answers:["2","3","4","5"],correct:1,explanation:"E-LE-FANT = 3 Silben!"},
+  {type:"multiple",question:"Wie viele Silben hat SONNENBLUME?",illustration:"🌻",answers:["2","3","4","5"],correct:2,explanation:"SON-NEN-BLU-ME = 4 Silben!"},
+  {type:"truefalse",question:"Das Wort MAMA hat 2 Silben.",illustration:"👩",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! MA-MA = 2 Silben."},
+  {type:"truefalse",question:"Das Wort BAUM hat 2 Silben.",illustration:"🌳",answers:["Richtig","Falsch"],correct:1,explanation:"Nein! BAUM hat nur 1 Silbe."},
+  {type:"multiple",question:"Wie viele Buchstaben hat HASE?",illustration:"🐰",answers:["3","4","5","6"],correct:1,explanation:"H-A-S-E = 4 Buchstaben!"},
+  {type:"multiple",question:"Wie viele Buchstaben hat SCHMETTERLING?",illustration:"🦋",answers:["10","12","13","14"],correct:2,explanation:"S-C-H-M-E-T-T-E-R-L-I-N-G = 13 Buchstaben!"},
+
+  // Reime
+  {type:"multiple",question:"Was reimt sich auf BALL?",illustration:"⚽",answers:["Baum","Hall","Kind","Tier"],correct:1,explanation:"BALL reimt sich auf HALL!"},
+  {type:"multiple",question:"Was reimt sich auf MAUS?",illustration:"🐭",answers:["Bein","Haus","Tisch","Berg"],correct:1,explanation:"MAUS reimt sich auf HAUS!"},
+  {type:"multiple",question:"Was reimt sich auf NACHT?",illustration:"🌙",answers:["Tag","Lacht","Sonne","Wind"],correct:1,explanation:"NACHT reimt sich auf LACHT!"},
+  {type:"multiple",question:"Was reimt sich auf REGEN?",illustration:"🌧️",answers:["Sonne","Legen","Wind","Meer"],correct:1,explanation:"REGEN reimt sich auf LEGEN!"},
+  {type:"multiple",question:"Was reimt sich auf TISCH?",illustration:"🪑",answers:["Fisch","Wand","Tür","Stuhl"],correct:0,explanation:"TISCH reimt sich auf FISCH!"},
+  {type:"truefalse",question:"BALL und FALL reimen sich.",illustration:"⚽",answers:["Richtig","Falsch"],correct:0,explanation:"Ja, das stimmt!"},
+
+  // Satzarten
+  {type:"multiple",question:"Welcher Satz ist ein Fragesatz?",illustration:"❓",answers:["Ich gehe nach Hause.","Komm sofort her!","Gehst du mit mir?","Das ist toll."],correct:2,explanation:"Gehst du mit mir? → Fragezeichen = Fragesatz!"},
+  {type:"multiple",question:"Welcher Satz ist ein Ausrufesatz?",illustration:"❗",answers:["Es regnet.","Pass auf!","Regnet es?","Es ist kalt."],correct:1,explanation:"Pass auf! → Ausrufezeichen = Ausrufesatz!"},
+  {type:"multiple",question:"Welcher Satz ist ein Aussagesatz?",illustration:"📝",answers:["Kommst du mit?","Lauf schnell!","Die Katze schläft.","Wie spät ist es?"],correct:2,explanation:"Die Katze schläft. → Aussagesatz mit Punkt!"},
+  {type:"truefalse",question:"Ein Fragesatz endet immer mit einem Fragezeichen.",illustration:"❓",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Jede Frage endet mit ?"},
+  {type:"truefalse",question:"Hilf mir! ist ein Ausrufesatz.",illustration:"❗",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Ausrufezeichen = Ausrufesatz."},
+  {type:"multiple",question:"Was ist ein Befehlssatz?",illustration:"🗣️",answers:["Fragt etwas","Sagt eine Tatsache","Befiehlt etwas","Ruft etwas aus"],correct:2,explanation:"Befehlssatz = Anweisung, z.B. 'Sitz!'"},
+
+  // Vokale/Konsonanten
+  {type:"multiple",question:"Was ist ein Vokal?",illustration:"🔤",answers:["B C D F","A E I O U","Alle Buchstaben","Großbuchstaben"],correct:1,explanation:"Vokale: A E I O U!"},
+  {type:"truefalse",question:"Das A ist ein Vokal.",illustration:"🔤",answers:["Richtig","Falsch"],correct:0,explanation:"Ja!"},
+  {type:"multiple",question:"Wie viele Vokale hat SCHULE?",illustration:"🏫",answers:["1","2","3","4"],correct:1,explanation:"U und E = 2 Vokale!"},
+  {type:"multiple",question:"Welcher Buchstabe ist KEIN Vokal?",illustration:"🔤",answers:["A","E","M","I"],correct:2,explanation:"M ist ein Konsonant – kein Vokal!"},
+
+  // Gegenteile
+  {type:"multiple",question:"Gegenteil von ALT?",illustration:"⏰",answers:["Groß","Jung","Klein","Laut"],correct:1,explanation:"Gegenteil von alt = jung!"},
+  {type:"multiple",question:"Gegenteil von LAUT?",illustration:"🔊",answers:["Groß","Leise","Schnell","Weit"],correct:1,explanation:"Gegenteil von laut = leise!"},
+  {type:"multiple",question:"Gegenteil von SCHWER?",illustration:"⚖️",answers:["Groß","Dick","Leicht","Lang"],correct:2,explanation:"Gegenteil von schwer = leicht!"},
+  {type:"multiple",question:"Gegenteil von SCHNELL?",illustration:"🐢",answers:["Laut","Leise","Groß","Langsam"],correct:3,explanation:"Gegenteil von schnell = langsam!"},
+  {type:"multiple",question:"Gegenteil von HELL?",illustration:"💡",answers:["Dunkel","Groß","Laut","Schnell"],correct:0,explanation:"Gegenteil von hell = dunkel!"},
+  {type:"multiple",question:"Gegenteil von VOLL?",illustration:"🥤",answers:["Schwer","Leer","Groß","Klein"],correct:1,explanation:"Gegenteil von voll = leer!"},
+  {type:"truefalse",question:"WARM und KALT sind Gegensätze.",illustration:"🌡️",answers:["Richtig","Falsch"],correct:0,explanation:"Ja!"},
+
+  // Hauptfigur, Erzählung
+  {type:"multiple",question:"Was ist eine Hauptfigur in einer Geschichte?",illustration:"🦸",answers:["Eine Nebenfigur","Die wichtigste Person","Der Erzähler","Ein Ort"],correct:1,explanation:"Hauptfigur = wichtigste Person der Geschichte!"},
+  {type:"multiple",question:"Was ist ein Dialog?",illustration:"💬",answers:["Ein Monolog","Ein Gespräch zwischen Personen","Eine Beschreibung","Ein Gedicht"],correct:1,explanation:"Dialog = Gespräch zwischen Figuren!"},
+  {type:"truefalse",question:"Direkte Rede steht in Anführungszeichen.",illustration:"💬",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Er sagte: \"Ich komme.\""},
+  {type:"multiple",question:"Was ist der Anfang einer Geschichte?",illustration:"📖",answers:["Schluss","Einleitung","Höhepunkt","Mitte"],correct:1,explanation:"Die Einleitung steht am Anfang!"},
+  {type:"multiple",question:"Was kommt normalerweise am Ende einer Geschichte?",illustration:"📖",answers:["Einleitung","Schluss","Hauptteil","Titel"],correct:1,explanation:"Der Schluss kommt am Ende!"},
+
+  // Textverständnis allgemein
+  {type:"multiple",question:"Was tut man, um eine Geschichte zu verstehen?",illustration:"📖",answers:["Schnell überfliegen","Aufmerksam lesen","Nur Bilder ansehen","Raten"],correct:1,explanation:"Aufmerksames Lesen hilft beim Verstehen!"},
+  {type:"multiple",question:"Was ist eine Überschrift?",illustration:"📰",answers:["Das Ende des Textes","Der Titel über dem Text","Ein Bild","Eine Frage"],correct:1,explanation:"Die Überschrift steht über dem Text als Titel!"},
+  {type:"truefalse",question:"Bilder können beim Verstehen einer Geschichte helfen.",illustration:"🖼️",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Bilder zeigen, was im Text passiert."},
+  {type:"multiple",question:"Was ist ein Absatz?",illustration:"📝",answers:["Ein einzelner Buchstabe","Ein Textabschnitt","Ein Satzzeichen","Eine Überschrift"],correct:1,explanation:"Ein Absatz ist ein Abschnitt eines Textes!"},
+
+  // Wortarten Basics für Leseverständnis
+  {type:"multiple",question:"Welches Wort ist ein Tier-Name (Nomen)?",illustration:"📝",answers:["laufen","Hund","schnell","und"],correct:1,explanation:"Hund ist ein Nomen!"},
+  {type:"multiple",question:"Welches Wort beschreibt eine Handlung (Verb)?",illustration:"🏃",answers:["Baum","laufen","blau","drei"],correct:1,explanation:"Laufen ist ein Verb (Tätigkeitswort)!"},
+  {type:"multiple",question:"Welches Wort beschreibt eine Eigenschaft (Adjektiv)?",illustration:"🔵",answers:["Tisch","essen","blau","und"],correct:2,explanation:"Blau ist ein Adjektiv (Eigenschaftswort)!"},
+
+  // Reimwörter / Lautspiele
+  {type:"multiple",question:"Welches Wort beginnt mit demselben Laut wie SONNE?",illustration:"☀️",answers:["Mond","Sterne","Wolke","Wind"],correct:1,explanation:"SONNE und STERNE beginnen beide mit S!"},
+  {type:"multiple",question:"Welches Wort beginnt mit demselben Laut wie BAUM?",illustration:"🌳",answers:["Blume","Apfel","Ente","Tisch"],correct:0,explanation:"BAUM und BLUME beginnen beide mit B!"},
+
+  // Lese-Strategien
+  {type:"multiple",question:"Was kann man tun, wenn man ein Wort nicht versteht?",illustration:"🤔",answers:["Aufgeben","Den Satz nochmal lesen","Das Buch wegwerfen","Nichts tun"],correct:1,explanation:"Nochmal lesen hilft oft beim Verstehen!"},
+  {type:"truefalse",question:"Man sollte beim Lesen leise für sich murmeln dürfen, wenn es hilft.",illustration:"📖",answers:["Richtig","Falsch"],correct:0,explanation:"Ja, das ist eine normale Lesestrategie für Anfänger!"},
+];
+
+function genJrLesenLesson(level, count){
+  const shuffled = jrShuffle(JR_LESEN_POOL);
+  return shuffled.slice(0, Math.min(count, shuffled.length));
+}
+// ── JUNIOR SCHREIBEN POOL (6-9 Jahre) ───────────────────────
+const JR_SCHREIBEN_POOL = [
+  // Groß-/Kleinschreibung
+  {type:"multiple",question:"Welches Wort ist FALSCH geschrieben?",illustration:"❌",answers:["Hund","Katze","apfel","Baum"],correct:2,explanation:"apfel – Nomen müssen groß: Apfel!"},
+  {type:"multiple",question:"Was wird immer großgeschrieben?",illustration:"📝",answers:["Verben","Adjektive","Nomen und Satzanfänge","Artikel"],correct:2,explanation:"Nomen und Satzanfänge immer groß!"},
+  {type:"truefalse",question:"laufen wird kleingeschrieben.",illustration:"🏃",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Verben werden klein geschrieben."},
+  {type:"multiple",question:"Was ist richtig?",illustration:"🐕",answers:["der hund","Der Hund","DER HUND","der Hund"],correct:1,explanation:"Hund ist ein Nomen → groß!"},
+  {type:"multiple",question:"Welches Wort ist falsch geschrieben?",illustration:"❌",answers:["Berlin","deutschland","München","Hamburg"],correct:1,explanation:"Deutschland – Ländernamen sind Nomen → groß!"},
+  {type:"truefalse",question:"Namen von Städten werden großgeschrieben.",illustration:"🏙️",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Berlin, Paris, Tokyo..."},
+  {type:"multiple",question:"Welches dieser Wörter ist ein Nomen?",illustration:"📝",answers:["rennen","lustig","Freude","obwohl"],correct:2,explanation:"Freude ist ein Nomen (ein Gefühl)!"},
+  {type:"truefalse",question:"Gefühle wie Trauer oder Glück sind auch Nomen.",illustration:"😊",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Abstrakte Nomen werden auch großgeschrieben."},
+  {type:"multiple",question:"Wie beginnt jeder Satz?",illustration:"📝",answers:["Mit Kleinbuchstabe","Mit Großbuchstabe","Mit Zahl","Mit Punkt"],correct:1,explanation:"Jeder Satz beginnt mit einem Großbuchstaben!"},
+
+  // Satzzeichen
+  {type:"multiple",question:"Was trennt Aufzählungen?",illustration:"📝",answers:["Punkt","Komma","Semikolon","Strich"],correct:1,explanation:"Aufzählungen trennt das Komma!"},
+  {type:"multiple",question:"Was kommt nach einer Frage?",illustration:"❓",answers:["Punkt","Ausrufezeichen","Fragezeichen","Komma"],correct:2,explanation:"Fragen enden mit ?"},
+  {type:"truefalse",question:"Super! endet mit einem Ausrufezeichen.",illustration:"❗",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Super! ist ein Ausruf."},
+  {type:"multiple",question:"Welches Satzzeichen leitet eine Aufzählung ein?",illustration:"📝",answers:["Komma","Punkt","Doppelpunkt","Ausrufezeichen"],correct:2,explanation:"Doppelpunkt leitet Aufzählungen ein: Ich mag: Äpfel, Birnen..."},
+  {type:"multiple",question:"Was steht nach dem letzten Wort eines Satzes?",illustration:"📝",answers:["Komma","Leerzeichen","Satzzeichen (. ! ?)","Großbuchstabe"],correct:2,explanation:"Am Satzende steht immer ein Satzzeichen!"},
+  {type:"truefalse",question:"Anführungszeichen umschließen direkte Rede.",illustration:"💬",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Er sagte: \"Hallo!\""},
+  {type:"multiple",question:"Wo setzt man ein Komma?",illustration:"📝",answers:["Nach jedem Wort","Bei Aufzählungen","Satzanfang","Nach Nomen"],correct:1,explanation:"Kommas trennen Aufzählungsteile!"},
+
+  // Brief schreiben
+  {type:"multiple",question:"Was gehört in einen Brief?",illustration:"📬",answers:["Nur Name","Anrede, Inhalt und Gruß","Nur Zahlen","Nur Bilder"],correct:1,explanation:"Brief: Anrede + Inhalt + Gruß!"},
+  {type:"multiple",question:"Wie beginnt ein Brief?",illustration:"✉️",answers:["Mit Zahl","Mit Anrede z.B. Liebe Anna","Mit Punkt","Mit dem Ende"],correct:1,explanation:"Briefe beginnen mit Anrede!"},
+  {type:"truefalse",question:"Am Ende eines Briefes steht eine Grußformel.",illustration:"📝",answers:["Richtig","Falsch"],correct:0,explanation:"Ja!"},
+  {type:"multiple",question:"Was ist eine Anrede?",illustration:"📬",answers:["Das Ende","Der Einstieg (Liebe Anna / Sehr geehrter)","Die Unterschrift","Die Adresse"],correct:1,explanation:"Die Anrede steht am Anfang des Briefes!"},
+  {type:"multiple",question:"Was ist eine Grußformel?",illustration:"✍️",answers:["Der Anfang","Die Unterschrift","Der Abschluss (Viele Grüße, Dein...)","Das Datum"],correct:2,explanation:"Grußformel = Abschluss des Briefes!"},
+  {type:"multiple",question:"Wo steht das Datum im Brief?",illustration:"📅",answers:["Am Ende","Am Anfang oben rechts","In der Mitte","Gibt es nicht"],correct:1,explanation:"Das Datum steht oben rechts im Brief!"},
+  {type:"truefalse",question:"Ein Brief kann auch eine E-Mail sein.",illustration:"📧",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! E-Mails folgen denselben Regeln wie Briefe."},
+
+  // Diktat / Rechtschreibung
+  {type:"multiple",question:"Was ist ein Diktat?",illustration:"📝",answers:["Text malen","Text nach Gehör aufschreiben","Rechenaufgabe","Lied"],correct:1,explanation:"Beim Diktat schreibst du nach Gehör!"},
+  {type:"multiple",question:"Was prüft das Diktat?",illustration:"✍️",answers:["Rechnen","Zeichnen","Rechtschreibung","Sport"],correct:2,explanation:"Diktat prüft Rechtschreibung!"},
+  {type:"truefalse",question:"Beim Diktat muss man genau zuhören.",illustration:"👂",answers:["Richtig","Falsch"],correct:0,explanation:"Ja!"},
+  {type:"multiple",question:"Was hilft beim Rechtschreiben?",illustration:"📚",answers:["Schlafen","Lesen und üben","Spielen","Essen"],correct:1,explanation:"Lesen und üben hilft!"},
+  {type:"multiple",question:"Was ist ein Wörterbuch?",illustration:"📖",answers:["Ein Roman","Nachschlagewerk für Schreibweise von Wörtern","Ein Gedichtband","Ein Tagebuch"],correct:1,explanation:"Im Wörterbuch kann man die richtige Schreibweise nachschlagen!"},
+  {type:"truefalse",question:"Doppelte Mitlaute wie mm oder tt zeigen, dass der Vokal davor kurz ist.",illustration:"📝",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Bett, Tasse – kurzer Vokal."},
+  {type:"multiple",question:"Welches Wort ist richtig geschrieben?",illustration:"✅",answers:["Sonne","Sone","Sonnne","SONne"],correct:0,explanation:"Sonne hat doppeltes n weil das o kurz klingt!"},
+  {type:"truefalse",question:"Straße wird mit ß geschrieben.",illustration:"🛣️",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Stra-ße – langes a → ß."},
+
+  // Druckschrift / Schreibschrift
+  {type:"multiple",question:"Was ist ein Druckbuchstabe?",illustration:"📄",answers:["Handgeschrieben","Klar gedruckt und einzeln","Kursiv","Groß"],correct:1,explanation:"Druckbuchstaben sind klar und einzeln!"},
+  {type:"multiple",question:"Was ist Schreibschrift?",illustration:"✍️",answers:["Gedruckte Buchstaben","Verbundene handgeschriebene Buchstaben","Großbuchstaben","Maschinenschrift"],correct:1,explanation:"Schreibschrift = verbundene Handschrift!"},
+  {type:"multiple",question:"Wie hält man einen Stift richtig?",illustration:"✏️",answers:["Mit der Faust","Zwischen Daumen, Zeige- und Mittelfinger","Mit dem kleinen Finger","Mit beiden Händen"],correct:1,explanation:"Der Dreipunktgriff: Daumen, Zeige- und Mittelfinger!"},
+  {type:"truefalse",question:"Man schreibt von links nach rechts.",illustration:"✍️",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Im Deutschen von links nach rechts."},
+
+  // Satzbau
+  {type:"multiple",question:"Was braucht jeder vollständige Satz mindestens?",illustration:"📝",answers:["Nur ein Nomen","Ein Subjekt und ein Verb","Nur ein Adjektiv","Nur ein Satzzeichen"],correct:1,explanation:"Ein Satz braucht mindestens Subjekt und Verb!"},
+  {type:"multiple",question:"Was ist das Subjekt im Satz 'Der Hund bellt.'?",illustration:"🐕",answers:["bellt","Der Hund","Der","."],correct:1,explanation:"Der Hund ist das Subjekt (wer/was bellt)!"},
+  {type:"multiple",question:"Was ist das Verb im Satz 'Die Katze schläft.'?",illustration:"🐱",answers:["Die","Katze","schläft","."],correct:2,explanation:"schläft ist das Verb (die Tätigkeit)!"},
+];
+
+function genJrSchreibenLesson(level, count){
+  const shuffled = jrShuffle(JR_SCHREIBEN_POOL);
+  return shuffled.slice(0, Math.min(count, shuffled.length));
+}
+// ── JUNIOR SACHKUNDE POOL (6-9 Jahre) ───────────────────────
+const JR_SACHKUNDE_POOL = [
+  // Jahreszeiten
+  {type:"multiple",question:"Wie viele Jahreszeiten gibt es?",illustration:"🌸",answers:["2","3","4","5"],correct:2,explanation:"4 Jahreszeiten!"},
+  {type:"multiple",question:"Welche Jahreszeit kommt nach dem Winter?",illustration:"🌸",answers:["Sommer","Herbst","Frühling","Winter"],correct:2,explanation:"Nach Winter kommt Frühling!"},
+  {type:"truefalse",question:"Im Sommer ist es warm.",illustration:"☀️",answers:["Richtig","Falsch"],correct:0,explanation:"Ja!"},
+  {type:"multiple",question:"Wann fallen die Blätter?",illustration:"🍂",answers:["Frühling","Sommer","Herbst","Winter"],correct:2,explanation:"Im Herbst fallen Blätter!"},
+  {type:"multiple",question:"Was fällt im Winter?",illustration:"❄️",answers:["Regen","Schnee","Hagel","Blumen"],correct:1,explanation:"Im Winter fällt Schnee!"},
+  {type:"multiple",question:"Wann blühen die meisten Blumen?",illustration:"🌸",answers:["Im Winter","Im Herbst","Im Frühling","Im Sommer"],correct:2,explanation:"Im Frühling blühen die meisten Blumen!"},
+  {type:"truefalse",question:"Im Winter sind die Tage kürzer als im Sommer.",illustration:"☀️",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Im Winter weniger Tageslicht."},
+  {type:"multiple",question:"Welche Frucht ist typisch für den Herbst?",illustration:"🍎",answers:["Erdbeere","Kirsche","Apfel","Himbeere"],correct:2,explanation:"Äpfel werden im Herbst geerntet!"},
+
+  // Tiere im Winter
+  {type:"multiple",question:"Was machen Igel im Winter?",illustration:"🦔",answers:["Fressen viel","Winterschlaf","Essen Beeren","Essen Nüsse"],correct:1,explanation:"Igel halten Winterschlaf!"},
+  {type:"multiple",question:"Welches Tier hält KEINEN Winterschlaf?",illustration:"🐕",answers:["Bär","Igel","Murmeltier","Hund"],correct:3,explanation:"Hunde halten keinen Winterschlaf!"},
+  {type:"truefalse",question:"Viele Vögel fliegen im Winter in den Süden.",illustration:"🐦",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Zugvögel."},
+  {type:"multiple",question:"Was machen Bären im Winter?",illustration:"🐻",answers:["Spielen","Schwimmen","Winterschlaf","Wandern"],correct:2,explanation:"Bären halten Winterschlaf!"},
+  {type:"multiple",question:"Was fressen Eichhörnchen im Winter?",illustration:"🐿️",answers:["Frisch gefangene Insekten","Im Herbst versteckte Nüsse","Gras","Blumen"],correct:1,explanation:"Eichhörnchen verstecken Nüsse im Herbst und fressen sie im Winter!"},
+  {type:"multiple",question:"Was ist Winterschlaf?",illustration:"😴",answers:["Normaler Schlaf","Tiefschlaf um Energie zu sparen","Nur kurzes Schlafen","Spielen"],correct:1,explanation:"Winterschlaf = langer Tiefschlaf zur Energieeinsparung!"},
+  {type:"multiple",question:"Welches Tier verändert im Winter sein Fell?",illustration:"🐇",answers:["Fuchs","Hase","Wolf","Eichhörnchen"],correct:1,explanation:"Hasen werden im Winter weiß als Tarnung im Schnee!"},
+  {type:"truefalse",question:"Schmetterlinge überwintern als Puppe oder Ei.",illustration:"🦋",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Viele Insekten überleben den Winter in verschiedenen Stadien."},
+
+  // Wetter
+  {type:"multiple",question:"Was zeigt ein Thermometer?",illustration:"🌡️",answers:["Uhrzeit","Temperatur","Regen","Wind"],correct:1,explanation:"Thermometer = Temperatur!"},
+  {type:"truefalse",question:"Wolken bestehen aus Wassertröpfchen.",illustration:"☁️",answers:["Richtig","Falsch"],correct:0,explanation:"Ja!"},
+  {type:"multiple",question:"Woher kommt Regen?",illustration:"🌧️",answers:["Boden","Wolken","Bäumen","Häusern"],correct:1,explanation:"Regen fällt aus Wolken!"},
+  {type:"multiple",question:"Was ist ein Regenbogen?",illustration:"🌈",answers:["Bunter Bogen aus Licht wenn Sonne und Regen zusammentreffen","Ein Tier","Eine Pflanze","Eine Wolke"],correct:0,explanation:"Sonne + Regen = Regenbogen!"},
+  {type:"truefalse",question:"Blitze entstehen bei Gewittern.",illustration:"⚡",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Blitze sind elektrische Entladungen."},
+  {type:"multiple",question:"Was ist Hagel?",illustration:"🌨️",answers:["Warmer Regen","Kleine Eiskugeln die vom Himmel fallen","Schnee","Nebel"],correct:1,explanation:"Hagel = kleine Eisbälle aus Gewitterwolken!"},
+  {type:"multiple",question:"Was ist Nebel?",illustration:"🌫️",answers:["Eine Wolke am Boden","Regen","Schnee","Wind"],correct:0,explanation:"Nebel ist eine sehr tiefe Wolke direkt am Boden!"},
+
+  // Notfälle / Feuerwehr / Polizei
+  {type:"multiple",question:"Was macht die Feuerwehr?",illustration:"🚒",answers:["Kuchen backen","Brände löschen und retten","Pakete liefern","Straßen bauen"],correct:1,explanation:"Feuerwehr löscht Brände!"},
+  {type:"multiple",question:"Welche Nummer ruft man bei der Feuerwehr?",illustration:"📞",answers:["110","112","911","100"],correct:1,explanation:"Feuerwehr = 112!"},
+  {type:"truefalse",question:"Bei einem Feuer nie den Aufzug benutzen!",illustration:"🚒",answers:["Richtig","Falsch"],correct:0,explanation:"Richtig! Immer Treppenhaus."},
+  {type:"multiple",question:"Welche Nummer hat die Polizei?",illustration:"🚔",answers:["112","122","110","100"],correct:2,explanation:"Polizei = 110!"},
+  {type:"multiple",question:"Was macht die Polizei?",illustration:"🚔",answers:["Feuer löschen","Für Sicherheit und Ordnung sorgen","Kranke behandeln","Pakete liefern"],correct:1,explanation:"Polizei sorgt für Sicherheit und Ordnung!"},
+  {type:"truefalse",question:"Der Notruf 112 gilt europaweit.",illustration:"📞",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! 112 funktioniert in ganz Europa!"},
+  {type:"multiple",question:"Was macht ein Krankenwagen?",illustration:"🚑",answers:["Feuer löscht","Kranke und Verletzte transportiert","Pakete liefert","Straßen repariert"],correct:1,explanation:"Krankenwagen transportiert Kranke und Verletzte!"},
+  {type:"multiple",question:"Wann ruft man den Notruf?",illustration:"🆘",answers:["Bei Langeweile","In echten Notfällen (Feuer, Unfall, Gefahr)","Beim Einkaufen","Bei Hunger"],correct:1,explanation:"Notruf nur in echten Notfällen!"},
+  {type:"truefalse",question:"Beim Notruf muss man den Ort des Geschehens nennen.",illustration:"📞",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! 5 W: Wo? Was? Wer? Wie viele? Warten!"},
+
+  // Allgemeines Sachwissen
+  {type:"multiple",question:"Was braucht eine Pflanze, um zu wachsen?",illustration:"🌱",answers:["Nur Erde","Wasser, Licht und Erde","Nur Wasser","Nur Licht"],correct:1,explanation:"Pflanzen brauchen Wasser, Licht und Erde!"},
+  {type:"multiple",question:"Woher kommt unsere Milch?",illustration:"🥛",answers:["Aus der Fabrik","Von Kühen","Aus dem Meer","Vom Baum"],correct:1,explanation:"Milch kommt von Kühen!"},
+  {type:"multiple",question:"Was passiert, wenn Wasser sehr kalt wird?",illustration:"❄️",answers:["Es wird heiß","Es wird zu Eis","Es verschwindet","Es wird Gas"],correct:1,explanation:"Sehr kaltes Wasser gefriert zu Eis!"},
+  {type:"multiple",question:"Was passiert, wenn Wasser sehr heiß wird?",illustration:"💨",answers:["Es wird zu Eis","Es verdampft","Es wird fest","Nichts"],correct:1,explanation:"Heißes Wasser verdampft (wird zu Dampf)!"},
+  {type:"truefalse",question:"Mülltrennung hilft der Umwelt.",illustration:"♻️",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Recycling schont Ressourcen."},
+  {type:"multiple",question:"Was kann man recyceln?",illustration:"♻️",answers:["Nichts","Papier, Glas und Plastik","Nur Essen","Nur Wasser"],correct:1,explanation:"Papier, Glas und Plastik können recycelt werden!"},
+];
+
+function genJrSachkundeLesson(level, count){
+  const shuffled = jrShuffle(JR_SACHKUNDE_POOL);
+  return shuffled.slice(0, Math.min(count, shuffled.length));
+}
+// ── JUNIOR MUSIK POOL (6-9 Jahre) ───────────────────────────
+const JR_MUSIK_POOL = [
+  // Rhythmus
+  {type:"multiple",question:"Was ist Rhythmus?",illustration:"🥁",answers:["Eine Melodie","Regelmäßiges Muster aus Tönen","Ein Instrument","Ein Lied"],correct:1,explanation:"Rhythmus = regelmäßiges Muster!"},
+  {type:"multiple",question:"Welches Instrument macht BOOM BOOM?",illustration:"🥁",answers:["Geige","Trommel","Flöte","Klavier"],correct:1,explanation:"Die Trommel!"},
+  {type:"truefalse",question:"Ein Rhythmus ist regelmäßig.",illustration:"🎵",answers:["Richtig","Falsch"],correct:0,explanation:"Ja!"},
+  {type:"multiple",question:"Was macht man beim Klatschen?",illustration:"👏",answers:["Singt","Tanzt","Schlägt Rhythmus","Malt"],correct:2,explanation:"Klatschen erzeugt Rhythmus!"},
+  {type:"multiple",question:"Was ist ein Takt?",illustration:"🎼",answers:["Ein Lied","Gleichmäßige Einheit im Rhythmus","Ein Instrument","Ein Sänger"],correct:1,explanation:"Takt = gleichmäßige Einheit!"},
+  {type:"truefalse",question:"Ein Metronom hilft Musikern im Takt zu bleiben.",illustration:"🎵",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Metronom = Taktgeber."},
+
+  // Instrumente
+  {type:"multiple",question:"Welches Instrument klingt wie ein Vogel?",illustration:"🐦",answers:["Trommel","Posaune","Flöte","Kontrabass"],correct:2,explanation:"Die Flöte hat einen hellen vogelähnlichen Klang!"},
+  {type:"multiple",question:"Was ist ein Schlagzeug?",illustration:"🥁",answers:["Ein Streichinstrument","Ein Blasinstrument","Ein Schlaginstrument","Ein Tasteninstrument"],correct:2,explanation:"Schlagzeug = Schlaginstrument!"},
+  {type:"multiple",question:"Welches Instrument zupft man?",illustration:"🎸",answers:["Flöte","Gitarre","Trommel","Klavier"],correct:1,explanation:"Gitarren werden gezupft oder gestrichen!"},
+  {type:"truefalse",question:"Trommeln gehören zur Familie der Schlaginstrumente.",illustration:"🥁",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Trommel = Schlaginstrument."},
+  {type:"multiple",question:"Was ist ein Tasteninstrument?",illustration:"🎹",answers:["Gitarre","Klavier","Trompete","Trommel"],correct:1,explanation:"Klavier = Tasteninstrument!"},
+  {type:"multiple",question:"Wie viele Saiten hat eine Gitarre normalerweise?",illustration:"🎸",answers:["4","5","6","7"],correct:2,explanation:"Eine Gitarre hat 6 Saiten!"},
+  {type:"multiple",question:"Welches Instrument spielt man mit einem Bogen?",illustration:"🎻",answers:["Klavier","Trommel","Geige","Flöte"],correct:2,explanation:"Die Geige wird mit einem Bogen gespielt!"},
+  {type:"multiple",question:"Welches Instrument hat Tasten und schwarze und weiße Reihen?",illustration:"🎹",answers:["Gitarre","Klavier","Trommel","Flöte"],correct:1,explanation:"Das Klavier hat schwarze und weiße Tasten!"},
+
+  // Noten & Begriffe
+  {type:"multiple",question:"Welche Note klingt am längsten?",illustration:"🎵",answers:["Viertelnote","Achtelnote","Halbe Note","Ganze Note"],correct:3,explanation:"Die ganze Note klingt am längsten!"},
+  {type:"multiple",question:"Auf welchen Linien stehen Noten?",illustration:"🎼",answers:["Wellen","Notensystem mit 5 Linien","Punkten","Kreisen"],correct:1,explanation:"Noten stehen auf dem Notensystem!"},
+  {type:"truefalse",question:"Noten zeigen Tonhöhe und Tondauer.",illustration:"🎵",answers:["Richtig","Falsch"],correct:0,explanation:"Ja!"},
+  {type:"multiple",question:"Was bedeutet Piano in der Musik?",illustration:"🎵",answers:["Laut spielen","Schnell spielen","Leise spielen","Langsam spielen"],correct:2,explanation:"Piano (p) = leise spielen!"},
+  {type:"truefalse",question:"Forte bedeutet laut spielen.",illustration:"🎵",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! f = forte = laut."},
+  {type:"multiple",question:"Was bedeutet Tempo in der Musik?",illustration:"🎵",answers:["Die Lautstärke","Die Geschwindigkeit","Die Tonhöhe","Die Tondauer"],correct:1,explanation:"Tempo = Geschwindigkeit der Musik!"},
+
+  // Singen & Lieder
+  {type:"multiple",question:"Was macht man beim Singen?",illustration:"🎤",answers:["Malt","Rechnet","Erzeugt Töne mit der Stimme","Liest"],correct:2,explanation:"Singen = Töne mit der Stimme!"},
+  {type:"multiple",question:"Was ist ein Chor?",illustration:"🎶",answers:["Ein Sänger","Gruppe von Sängern","Ein Instrument","Ein Tanz"],correct:1,explanation:"Chor = Gruppe von Sängern!"},
+  {type:"multiple",question:"Was ist eine Melodie?",illustration:"🎵",answers:["Ein Rhythmus","Tonfolge die man summen kann","Ein Instrument","Ein Takt"],correct:1,explanation:"Melodie = summbare Tonfolge!"},
+  {type:"multiple",question:"Was ist ein Kanon?",illustration:"🎶",answers:["Ein Schlagwerk","Lied bei dem Stimmen versetzt einsetzen","Ein Tanz","Ein Rhythmus"],correct:1,explanation:"Kanon = Lied bei dem Stimmen zeitversetzt einsetzen (Bruder Jakob)!"},
+  {type:"truefalse",question:"Bruder Jakob ist ein bekannter Kanon.",illustration:"🎵",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Bruder Jakob wird als Kanon gesungen."},
+  {type:"truefalse",question:"Stille Nacht ist ein Weihnachtslied.",illustration:"🎄",answers:["Richtig","Falsch"],correct:0,explanation:"Ja! Stille Nacht ist eines der bekanntesten Weihnachtslieder."},
+  {type:"multiple",question:"Was ist Alle meine Entchen?",illustration:"🦆",answers:["Ein Märchen","Ein Kinderlied","Ein Gedicht","Ein Tanz"],correct:1,explanation:"Alle meine Entchen ist ein Kinderlied!"},
+  {type:"truefalse",question:"Jeder Mensch hat eine einzigartige Stimme.",illustration:"🎤",answers:["Richtig","Falsch"],correct:0,explanation:"Ja!"},
+];
+
+function genJrMusikLesson(level, count){
+  const shuffled = jrShuffle(JR_MUSIK_POOL);
+  return shuffled.slice(0, Math.min(count, shuffled.length));
+}
+
 function fbQs(title){
   const p=S.prof;const age=p?p.age:"junior";
   const subId=S.lesson?.sub?.id||"";
   const idx=S.lesson?.index||0;
+  if(age==="mini"){
+    const lvl=typeof idx==="number"?idx:0;
+    const COUNT=12;
+    try{
+      switch(subId){
+        case "zahlen": return genMiniZahlenLesson(lvl, COUNT);
+        case "buchstaben": return genMiniBuchstabenLesson(lvl, COUNT);
+        case "formen": return genMiniFormenLesson(lvl, COUNT);
+        case "tiere": return genMiniTiereLesson(lvl, COUNT);
+        case "koerper": return genMiniKoerperLesson(lvl, COUNT);
+        case "farben": return genMiniFarbenLesson(lvl, COUNT);
+      }
+    }catch(e){console.warn("mini generator failed, falling back",e);}
+  }
+  if(age==="junior"){
+    const lvl=typeof idx==="number"?idx:0;
+    const COUNT=12;
+    try{
+      switch(subId){
+        case "mathe": return genJuniorMatheLesson(lvl, COUNT);
+        case "englisch": return genJrEnglischLesson(lvl, COUNT);
+        case "lesen": return genJrLesenLesson(lvl, COUNT);
+        case "schreiben": return genJrSchreibenLesson(lvl, COUNT);
+        case "sachkunde": return genJrSachkundeLesson(lvl, COUNT);
+        case "musik": return genJrMusikLesson(lvl, COUNT);
+      }
+    }catch(e){console.warn("junior generator failed, falling back",e);}
+  }
   try{
     const qs=(FBQ[age]||{})[subId];
     if(qs&&qs[Math.min(idx,qs.length-1)])return qs[Math.min(idx,qs.length-1)];
